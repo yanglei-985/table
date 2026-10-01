@@ -1,0 +1,10 @@
+---
+interface Props {
+  level: '入门' | '进阶' | '高级';
+}
+
+const { level } = Astro.props;
+const tone = { 入门: 'chip-ok', 进阶: 'chip-warn', 高级: 'chip-danger' }[level];
+---
+
+<span class:list={['chip', tone]}>{level}</span>
