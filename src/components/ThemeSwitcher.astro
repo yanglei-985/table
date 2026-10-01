@@ -1,0 +1,75 @@
+---
+import { themes } from '../site.config';
+---
+
+<div class="themes" role="group" aria-label="切换主题">
+  {themes.map((t) => (
+    <button
+      class="swatch"
+      type="button"
+      data-theme-key={t.key}
+      data-bg={t.bg}
+      title={`主题：${t.name}`}
+      aria-label={`切换到「${t.name}」主题`}
+      aria-pressed="false"
+      style={`--sw-bg: ${t.bg}; --sw-a: ${t.colors[0]}; --sw-b: ${t.colors[1]};`}
+    ></button>
+  ))}
+</div>
+
+<script>
+  const root = document.documentElement;
+  const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('.swatch'));
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+
+  function sync() {
+    const current = root.dataset.theme;
+    for (const b of buttons) b.setAttribute('aria-pressed', String(b.dataset.themeKey === current));
+  }
+
+  for (const b of buttons) {
+    b.addEventListener('click', () => {
+      root.dataset.theme = b.dataset.themeKey!;
+      if (meta) meta.content = b.dataset.bg!;
+      try {
+        localStorage.setItem('theme', b.dataset.themeKey!);
+      } catch {
+        // 无痕模式等情况下无法保存，本次浏览仍然生效
+      }
+      sync();
+    });
+  }
+  sync();
+</script>
+
+<style>
+  .themes {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px;
+    border-radius: 999px;
+    border: 1px solid var(--line-2);
+  }
+  .swatch {
+    position: relative;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--sw-bg);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 25%, transparent);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+  }
+  .swatch::after {
+    content: '';
+    position: absolute;
+    inset: 5px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--sw-a) 0 50%, var(--sw-b) 50% 100%);
+  }
+  .swatch:hover { transform: scale(1.1); }
+  .swatch[aria-pressed='true'] {
+    box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--brand);
+  }
+</style>

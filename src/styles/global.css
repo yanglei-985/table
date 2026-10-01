@@ -1,32 +1,112 @@
 /* ============================================================
-   设计系统：深色底 + 紫青渐变光斑 + 细边框卡片
+   设计系统
+   - 三套主题通过 <html data-theme="..."> 切换，变量名在各主题间保持一致
+   - 组件里只用变量，不写死颜色；新增主题只需复制一个块改色值
    ============================================================ */
 :root {
+  /* 中文用宋体，西文用 Times New Roman：西文字体排在前面，
+     它不含中文字形，浏览器会自动回退到后面的宋体。 */
+  --font: 'Times New Roman', Times, 'Liberation Serif', Tinos, 'Songti SC', STSong, SimSun,
+    '宋体', NSimSun, 'Noto Serif CJK SC', 'Noto Serif SC', 'Source Han Serif SC', serif;
+  --mono: ui-monospace, SFMono-Regular, 'JetBrains Mono', Menlo, Consolas, 'Songti SC', SimSun,
+    monospace;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --max: 1120px;
+
+  --brand-soft: color-mix(in srgb, var(--brand) 14%, transparent);
+  --gradient: linear-gradient(135deg, var(--brand), var(--brand-2));
+  --line: color-mix(in srgb, var(--ink) 7%, transparent);
+  --line-2: color-mix(in srgb, var(--ink) 14%, transparent);
+  --shadow: 0 18px 50px color-mix(in srgb, var(--shade) 50%, transparent);
+}
+
+/* 主题一：星夜（深色 · 紫青渐变） */
+:root,
+[data-theme='night'] {
   color-scheme: dark;
   --bg: #06070d;
   --surface: #11131f;
   --surface-2: #171a29;
   --surface-3: #1e2233;
-  --line: rgba(255, 255, 255, 0.07);
-  --line-2: rgba(255, 255, 255, 0.14);
   --text: #eef0f7;
   --text-2: #a5abc2;
   --text-3: #6d7288;
+  --prose: #d9dcea;
   --brand: #6d5efc;
   --brand-2: #22d3ee;
-  --brand-soft: rgba(109, 94, 252, 0.14);
-  --gradient: linear-gradient(135deg, var(--brand), var(--brand-2));
-  --gold: #f5c451;
+  --brand-text: #c9c3ff;
+  --on-brand: #fff;
+  --ink: #fff;
+  --shade: #000;
+  --glow-1: color-mix(in srgb, var(--brand) 22%, transparent);
+  --glow-2: color-mix(in srgb, var(--brand-2) 13%, transparent);
+  --code-bg: #1c2128;
+  --card-bg: linear-gradient(180deg, color-mix(in srgb, var(--ink) 3.5%, transparent), color-mix(in srgb, var(--ink) 1%, transparent));
   --ok: #22c55e;
+  --ok-text: #86efac;
   --warn: #f59e0b;
+  --warn-text: #fcd34d;
   --danger: #f43f5e;
-  --radius: 16px;
-  --radius-sm: 10px;
-  --shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
-  --max: 1120px;
-  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
-    'Microsoft YaHei', 'Helvetica Neue', sans-serif;
-  --mono: ui-monospace, SFMono-Regular, 'JetBrains Mono', Menlo, Consolas, monospace;
+  --danger-text: #fda4af;
+}
+
+/* 主题二：宣纸（浅色 · 米黄纸面 + 朱砂红） */
+[data-theme='paper'] {
+  color-scheme: light;
+  --bg: #f5efe3;
+  --surface: #fffcf5;
+  --surface-2: #efe6d4;
+  --surface-3: #e5d9c2;
+  --text: #2a1f16;
+  --text-2: #5e5043;
+  --text-3: #8d7f6f;
+  --prose: #3a2e24;
+  --brand: #b33a2a;
+  --brand-2: #c8892c;
+  --brand-text: #9a2f21;
+  --on-brand: #fff;
+  --ink: #4a3520;
+  --shade: #6b5234;
+  --glow-1: color-mix(in srgb, var(--brand) 10%, transparent);
+  --glow-2: color-mix(in srgb, var(--brand-2) 12%, transparent);
+  --code-bg: #fbf7ee;
+  --card-bg: var(--surface);
+  --ok: #3d7a37;
+  --ok-text: #2e6429;
+  --warn: #b4741a;
+  --warn-text: #8a560f;
+  --danger: #b42318;
+  --danger-text: #981b12;
+}
+
+/* 主题三：青瓷（浅色 · 冷调青绿 + 靛蓝） */
+[data-theme='celadon'] {
+  color-scheme: light;
+  --bg: #edf3f1;
+  --surface: #fbfdfc;
+  --surface-2: #e2ece8;
+  --surface-3: #d3e1dc;
+  --text: #13272a;
+  --text-2: #40585a;
+  --text-3: #6f8686;
+  --prose: #1f3436;
+  --brand: #227a6c;
+  --brand-2: #2f6fa3;
+  --brand-text: #1b6458;
+  --on-brand: #fff;
+  --ink: #12403c;
+  --shade: #2f5a55;
+  --glow-1: color-mix(in srgb, var(--brand) 12%, transparent);
+  --glow-2: color-mix(in srgb, var(--brand-2) 11%, transparent);
+  --code-bg: #f6faf9;
+  --card-bg: var(--surface);
+  --ok: #23804a;
+  --ok-text: #186b3b;
+  --warn: #a8670f;
+  --warn-text: #84500a;
+  --danger: #b4283a;
+  --danger-text: #96202f;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -37,8 +117,8 @@ body {
   font-family: var(--font);
   background: var(--bg);
   color: var(--text);
-  font-size: 15px;
-  line-height: 1.7;
+  font-size: 16px;
+  line-height: 1.75;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   display: flex;
@@ -50,8 +130,8 @@ body::before {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(900px 500px at 12% -8%, rgba(109, 94, 252, 0.22), transparent 62%),
-    radial-gradient(760px 460px at 92% 4%, rgba(34, 211, 238, 0.13), transparent 60%);
+    radial-gradient(900px 500px at 12% -8%, var(--glow-1), transparent 62%),
+    radial-gradient(760px 460px at 92% 4%, var(--glow-2), transparent 60%);
   pointer-events: none;
   z-index: -1;
 }
@@ -59,12 +139,19 @@ body::before {
 a { color: inherit; text-decoration: none; }
 button, input { font: inherit; color: inherit; outline: none; border: 0; background: none; }
 img { display: block; max-width: 100%; }
-::selection { background: rgba(109, 94, 252, 0.45); }
+::selection { background: color-mix(in srgb, var(--brand) 45%, transparent); }
 ::-webkit-scrollbar { width: 9px; height: 9px; }
-::-webkit-scrollbar-thumb { background: #2a2f45; border-radius: 9px; }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 9px; }
 ::-webkit-scrollbar-track { background: transparent; }
 
 :focus-visible { outline: 2px solid var(--brand-2); outline-offset: 2px; border-radius: 6px; }
+
+/* 代码高亮：深色主题用 --shiki-dark，浅色主题用 --shiki-light */
+.astro-code { background-color: var(--code-bg) !important; }
+.astro-code,
+.astro-code span { color: var(--shiki-dark); }
+:is([data-theme='paper'], [data-theme='celadon']) .astro-code,
+:is([data-theme='paper'], [data-theme='celadon']) .astro-code span { color: var(--shiki-light); }
 
 .container { width: 100%; max-width: var(--max); margin: 0 auto; padding: 0 20px; }
 main { flex: 1; }
@@ -91,12 +178,12 @@ main { flex: 1; }
 .btn:hover { transform: translateY(-1px); }
 .btn-primary {
   background: var(--gradient);
-  color: #fff;
-  box-shadow: 0 10px 30px rgba(109, 94, 252, 0.35);
+  color: var(--on-brand);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--brand) 35%, transparent);
 }
-.btn-primary:hover { box-shadow: 0 14px 38px rgba(109, 94, 252, 0.5); }
-.btn-ghost { border: 1px solid var(--line-2); background: rgba(255, 255, 255, 0.03); }
-.btn-ghost:hover { border-color: rgba(255, 255, 255, 0.28); background: rgba(255, 255, 255, 0.06); }
+.btn-primary:hover { box-shadow: 0 14px 38px color-mix(in srgb, var(--brand) 50%, transparent); }
+.btn-ghost { border: 1px solid var(--line-2); background: color-mix(in srgb, var(--ink) 3%, transparent); }
+.btn-ghost:hover { border-color: color-mix(in srgb, var(--ink) 28%, transparent); background: color-mix(in srgb, var(--ink) 6%, transparent); }
 
 /* ---------- 小标签 ---------- */
 .chip {
@@ -109,16 +196,16 @@ main { flex: 1; }
   font-size: 12px;
   color: var(--text-2);
   border: 1px solid var(--line-2);
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
   white-space: nowrap;
 }
-.chip-brand { color: #c9c3ff; border-color: rgba(109, 94, 252, 0.4); background: var(--brand-soft); }
-.chip-ok { color: #86efac; border-color: rgba(34, 197, 94, 0.35); background: rgba(34, 197, 94, 0.1); }
-.chip-warn { color: #fcd34d; border-color: rgba(245, 158, 11, 0.35); background: rgba(245, 158, 11, 0.1); }
-.chip-danger { color: #fda4af; border-color: rgba(244, 63, 94, 0.35); background: rgba(244, 63, 94, 0.1); }
+.chip-brand { color: var(--brand-text); border-color: color-mix(in srgb, var(--brand) 40%, transparent); background: var(--brand-soft); }
+.chip-ok { color: var(--ok-text); border-color: color-mix(in srgb, var(--ok) 35%, transparent); background: color-mix(in srgb, var(--ok) 10%, transparent); }
+.chip-warn { color: var(--warn-text); border-color: color-mix(in srgb, var(--warn) 35%, transparent); background: color-mix(in srgb, var(--warn) 10%, transparent); }
+.chip-danger { color: var(--danger-text); border-color: color-mix(in srgb, var(--danger) 35%, transparent); background: color-mix(in srgb, var(--danger) 10%, transparent); }
 
 .card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01));
+  background: var(--card-bg);
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }

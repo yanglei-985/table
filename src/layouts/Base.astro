@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
-import { site } from '../site.config';
+import ThemeSwitcher from '../components/ThemeSwitcher.astro';
+import { site, themes, defaultTheme } from '../site.config';
 import { url } from '../lib';
 
 interface Props {
@@ -11,16 +12,27 @@ interface Props {
 const { title, description = site.description } = Astro.props;
 const pageTitle = title ? `${title} · ${site.name}` : `${site.name} · ${site.tagline}`;
 const path = Astro.url.pathname;
+const themeBg = Object.fromEntries(themes.map((t) => [t.key, t.bg]));
 const isHome = path === url('') || path === url('').replace(/\/$/, '');
 ---
 
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme={defaultTheme}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#06070d" />
+    <meta name="theme-color" content={themeBg[defaultTheme]} />
+    <!-- 在页面绘制前应用访客上次选择的主题，避免闪烁 -->
+    <script is:inline define:vars={{ themeBg }}>
+      try {
+        const saved = localStorage.getItem('theme');
+        if (saved && themeBg[saved]) {
+          document.documentElement.dataset.theme = saved;
+          document.querySelector('meta[name="theme-color"]').content = themeBg[saved];
+        }
+      } catch {}
+    </script>
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <link rel="icon" type="image/svg+xml" href={url('favicon.svg')} />
@@ -39,6 +51,7 @@ const isHome = path === url('') || path === url('').replace(/\/$/, '');
           <a href={isHome ? '#faq' : url('#faq')}>常见问题</a>
           <a class="nav-cta" href={isHome ? '#contact' : url('#contact')}>联系我</a>
         </nav>
+        <ThemeSwitcher />
       </div>
     </header>
 
@@ -62,11 +75,12 @@ const isHome = path === url('') || path === url('').replace(/\/$/, '');
     z-index: 50;
     backdrop-filter: saturate(160%) blur(14px);
     -webkit-backdrop-filter: saturate(160%) blur(14px);
-    background: rgba(6, 7, 13, 0.72);
+    background: color-mix(in srgb, var(--bg) 72%, transparent);
     border-bottom: 1px solid var(--line);
   }
-  .topbar-inner { height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+  .topbar-inner { height: 64px; display: flex; align-items: center; gap: 16px; }
+  .nav { margin-left: auto; white-space: nowrap; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; flex-shrink: 0; white-space: nowrap; }
   .brand-mark {
     display: grid;
     place-items: center;
@@ -74,15 +88,15 @@ const isHome = path === url('') || path === url('').replace(/\/$/, '');
     padding: 0 9px;
     border-radius: 10px;
     background: var(--gradient);
-    color: #fff;
+    color: var(--on-brand);
     font-size: 13px;
     letter-spacing: 0.04em;
-    box-shadow: 0 6px 18px rgba(109, 94, 252, 0.4);
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--brand) 40%, transparent);
   }
   .brand-name { font-size: 16px; }
   .nav { display: flex; align-items: center; gap: 4px; font-size: 14px; }
   .nav a { padding: 7px 12px; border-radius: 9px; color: var(--text-2); transition: color 0.2s, background 0.2s; }
-  .nav a:hover { color: var(--text); background: rgba(255, 255, 255, 0.05); }
+  .nav a:hover { color: var(--text); background: color-mix(in srgb, var(--ink) 5%, transparent); }
   .nav .nav-cta { color: var(--text); border: 1px solid var(--line-2); margin-left: 6px; }
   .footer { border-top: 1px solid var(--line); margin-top: 40px; }
   .footer-inner {
@@ -99,7 +113,9 @@ const isHome = path === url('') || path === url('').replace(/\/$/, '');
   }
   @media (max-width: 640px) {
     .brand-name { display: none; }
+    .topbar-inner { gap: 10px; }
     .nav a { padding: 7px 9px; }
-    .nav a:nth-child(2) { display: none; }
+    .nav a:nth-child(2),
+    .nav a:nth-child(3) { display: none; }
   }
 </style>

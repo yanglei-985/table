@@ -10,6 +10,11 @@ export default defineConfig({
   trailingSlash: 'ignore',
   markdown: {
     processor: unified({ remarkPlugins: [remarkCallout] }),
-    shikiConfig: { theme: 'github-dark-dimmed', wrap: true },
+    // 代码高亮同时生成深色、浅色两套配色，由当前主题决定显示哪套（见 global.css）
+    shikiConfig: {
+      themes: { dark: 'github-dark-dimmed', light: 'github-light' },
+      defaultColor: false,
+      wrap: true,
+    },
   },
 });

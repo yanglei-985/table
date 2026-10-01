@@ -42,14 +42,14 @@ const keywords = [title, description, categoryName(category), level, ...tags].jo
   }
   .tcard:hover {
     transform: translateY(-3px);
-    border-color: rgba(109, 94, 252, 0.45);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(109, 94, 252, 0.15);
+    border-color: color-mix(in srgb, var(--brand) 45%, transparent);
+    box-shadow: 0 16px 40px color-mix(in srgb, var(--shade) 45%, transparent), 0 0 0 1px color-mix(in srgb, var(--brand) 15%, transparent);
   }
   .tcard.featured {
-    border-color: rgba(109, 94, 252, 0.4);
+    border-color: color-mix(in srgb, var(--brand) 40%, transparent);
     background:
-      radial-gradient(420px 160px at 100% 0%, rgba(109, 94, 252, 0.18), transparent 70%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+      radial-gradient(420px 160px at 100% 0%, color-mix(in srgb, var(--brand) 18%, transparent), transparent 70%),
+      linear-gradient(180deg, color-mix(in srgb, var(--ink) 4%, transparent), color-mix(in srgb, var(--ink) 1%, transparent));
   }
   .badge {
     position: absolute;
@@ -59,14 +59,14 @@ const keywords = [title, description, categoryName(category), level, ...tags].jo
     border-radius: 999px;
     font-size: 12px;
     font-weight: 600;
-    color: #fff;
+    color: var(--on-brand);
     background: var(--gradient);
-    box-shadow: 0 6px 16px rgba(109, 94, 252, 0.45);
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--brand) 45%, transparent);
   }
   .tcard-cat { font-size: 12px; color: var(--brand-2); letter-spacing: 0.06em; }
   h3 { font-size: 18px; line-height: 1.4; }
   p { color: var(--text-2); font-size: 14px; flex: 1; }
   .tcard-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-  .tcard-go { margin-top: 6px; font-size: 13px; font-weight: 600; color: #c9c3ff; }
-  .tcard:hover .tcard-go { color: #fff; }
+  .tcard-go { margin-top: 6px; font-size: 13px; font-weight: 600; color: var(--brand-text); }
+  .tcard:hover .tcard-go { color: var(--text); }
 </style>

@@ -55,3 +55,13 @@ export const faq = [
     a: '非常欢迎！看「写作指南」里的《如何写一篇新教程》，复制模板改一改就能提交。',
   },
 ];
+
+// 主题：key 对应 global.css 里的 [data-theme='key']；colors 只用于切换按钮上的色块
+export const themes = [
+  { key: 'night', name: '星夜', bg: '#06070d', colors: ['#6d5efc', '#22d3ee'] },
+  { key: 'paper', name: '宣纸', bg: '#f5efe3', colors: ['#b33a2a', '#c8892c'] },
+  { key: 'celadon', name: '青瓷', bg: '#edf3f1', colors: ['#227a6c', '#2f6fa3'] },
+] as const;
+
+// 访客第一次打开时使用的主题
+export const defaultTheme: (typeof themes)[number]['key'] = 'night';
