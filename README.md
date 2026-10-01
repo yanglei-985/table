@@ -64,12 +64,12 @@ draft: false            # true 时不发布
 - 改默认主题：`src/site.config.ts` 里的 `defaultTheme`。
 - 改配色：`src/styles/global.css` 里对应的 `[data-theme='...']` 块。
 - 加新主题：在 `global.css` 复制一个主题块改色值，再在 `site.config.ts` 的 `themes` 里加一项；浅色主题还要把 key 加进 `global.css` 里代码高亮那条 `:is(...)` 选择器。
-- 字体：`global.css` 的 `--font`。西文 Times New Roman 排在前面，它没有中文字形，中文会自动落到宋体（Windows「宋体」、macOS「宋体-简」，手机上通常是系统自带的衬线中文字体）。
+- 字体：`global.css` 的 `--font`。西文 Times New Roman 排在前面，它没有中文字形，中文会自动落到宋体（Windows「宋体」、macOS / iPhone「宋体-简」）。部分安卓手机没有自带宋体，会显示为系统默认字体。
 
 ## 发布到 GitHub Pages
 
 1. 仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**。
-2. 把代码推送到 `main` 分支（或在 Actions 页手动运行「部署到 GitHub Pages」）。
+2. 把代码推送到 `main` 或 `claude/relaxed-rubin-encwsr` 分支（或在 Actions 页手动运行「部署到 GitHub Pages」）。
 3. 部署完成后访问 `https://<用户名>.github.io/<仓库名>/`。
 
 工作流会自动设置子路径，无需修改配置。
