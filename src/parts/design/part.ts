@@ -1,17 +1,19 @@
 // 设计部：网站的外观与品牌 —— 站名、图标、作者、页脚，以及主题配色和字体（styles/global.css）
 import { z } from 'astro/zod';
-import { definePart, line, text } from '../../core/part';
+import { definePart, line, link, text } from '../../core/part';
 
 export const designPart = definePart({
   id: 'design',
   name: '设计部',
-  duty: '站名、图标文字、作者、页脚和浏览器标题；三套主题配色与宋体字体',
+  duty: '顶栏（图标、站名、导航链接）、页脚（作者、说明、链接）和浏览器标题；三套主题配色与宋体字体',
   schema: z.object({
     name: line(30),
     logo: line(6),
     author: line(30),
     tagline: text(80),
     footerNote: text(80),
+    nav: z.array(link).max(8),
+    footerLinks: z.array(link).max(8),
   }),
   defaults: {
     name: '新手上手站',
@@ -19,6 +21,13 @@ export const designPart = definePart({
     author: '你的名字',
     tagline: '把我踩过的坑，写成你能照着做的步骤',
     footerNote: '欢迎转发给需要的朋友',
+    nav: [
+      { label: '教程', href: '#tutorials' },
+      { label: '学习路线', href: '#roadmap' },
+      { label: '常见问题', href: '#faq' },
+      { label: '联系我', href: '#contact' },
+    ],
+    footerLinks: [],
   },
 });
 

@@ -23,3 +23,18 @@ export function formatDate(iso: string | null | undefined) {
 export function safeJson(data: unknown) {
   return JSON.stringify(data).replace(/</g, '\\u003c');
 }
+
+/**
+ * 把可编辑链接的地址变成真正的 href：
+ *   @first → 第一篇教程；#xxx 在非首页时指向首页的对应区块；其他原样返回
+ */
+export function resolveHref(raw: string, { isHome = true, first }: { isHome?: boolean; first?: string | null } = {}) {
+  if (raw === '@first') return first ?? '#tutorials';
+  if (raw.startsWith('#') && !isHome) return `/${raw}`;
+  return raw;
+}
+
+/** 外部链接在新窗口打开 */
+export function isExternal(href: string) {
+  return /^https?:\/\//.test(href);
+}

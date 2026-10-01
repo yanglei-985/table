@@ -2,15 +2,19 @@
 // 落地部 · 首屏：小标签、大标题、介绍、按钮、卖点、统计
 import { landing } from '../../index';
 import { listTutorials } from '../../tutorials/store';
-import { url } from '../../../core/util';
+import EditableLink from '../../editor/EditableLink.astro';
 
 const page = landing();
+const isAdmin = Astro.locals.user?.role === 'admin';
 const published = listTutorials();
-const first = published.find((t) => t.featured) ?? published[0];
+const firstTutorial = published.find((t) => t.featured) ?? published[0];
+const first = firstTutorial ? `/tutorials/${firstTutorial.slug}/` : null;
+// 还没有教程时，访客看不到「第一篇教程」按钮
+const buttons = page.heroButtons.filter((b) => b.href !== '@first' || first || isAdmin);
 const stats = [
-  { value: published.length, label: '篇教程' },
-  { value: new Set(published.map((t) => t.category)).size, label: '个分类' },
-  { value: published.reduce((sum, t) => sum + t.duration, 0), label: '分钟学完全部' },
+  published.length,
+  new Set(published.map((t) => t.category)).size,
+  published.reduce((sum, t) => sum + t.duration, 0),
 ];
 ---
 
@@ -22,10 +26,15 @@ const stats = [
       <span class="gradient-text" data-field="heroHighlight" data-placeholder="渐变高亮的第二行">{page.heroHighlight}</span>
     </h1>
     <p class="hero-desc" data-field="description" data-multiline data-placeholder="一段介绍">{page.description}</p>
-    <div class="hero-actions">
-      {first && <a class="btn btn-primary" href={url(`tutorials/${first.slug}/`)}>从第一篇开始 →</a>}
-      <a class="btn btn-ghost" href="#tutorials">浏览全部教程</a>
+    <div class="hero-actions" data-list="heroButtons">
+      {buttons.map((b) => <EditableLink link={b} first={first} />)}
+      {isAdmin && <button type="button" class="edit-btn edit-only add-link" data-add-item="heroButtons" data-open-link>＋ 按钮</button>}
     </div>
+    {isAdmin && (
+      <template data-template="heroButtons">
+        <EditableLink link={{ label: '新按钮', href: '#tutorials', style: 'ghost' }} />
+      </template>
+    )}
     <ul class="hero-points" data-list="heroPoints">
       {page.heroPoints.map((p) => (
         <li data-item>✓ <span data-sub="." data-placeholder="卖点">{p}</span><button type="button" class="x edit-only" data-remove aria-label="删除">×</button></li>
@@ -35,11 +44,11 @@ const stats = [
     <template data-template="heroPoints">
       <li data-item>✓ <span data-sub="." data-placeholder="卖点">新卖点</span><button type="button" class="x edit-only" data-remove aria-label="删除">×</button></li>
     </template>
-    <div class="stats card">
-      {stats.map((s) => (
-        <div class="stat">
-          <strong class="gradient-text">{s.value}</strong>
-          <span>{s.label}</span>
+    <div class="stats card" data-list="statLabels">
+      {stats.map((value, i) => (
+        <div class="stat" data-item>
+          <strong class="gradient-text">{value}</strong>
+          <span data-sub="." data-placeholder="说明">{page.statLabels[i]}</span>
         </div>
       ))}
     </div>
@@ -52,7 +61,7 @@ const stats = [
   .hero-chip { margin-bottom: 22px; }
   h1 { font-size: clamp(32px, 5.6vw, 56px); line-height: 1.18; letter-spacing: -0.01em; }
   .hero-desc { max-width: 600px; margin-top: 20px; font-size: 16px; color: var(--text-2); }
-  .hero-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 30px; }
+  .hero-actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; margin-top: 30px; }
   .hero-points {
     list-style: none;
     display: flex;

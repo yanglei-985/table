@@ -99,12 +99,54 @@ try {
 
   await admin.locator('[data-list=roadmap] [data-item]').last().locator('[data-remove]').click();
 
-  // 站点设置对话框：改站名、加联系方式
+  // 顶栏左上角：图标文字和站名直接改（点它们不会跳转）
+  const replaceText = async (locator, text) => {
+    await locator.click();
+    await admin.keyboard.press('ControlOrMeta+A');
+    await admin.keyboard.type(text);
+  };
+  await replaceText(admin.locator('.topbar [data-field=logo]'), '王课');
+  await replaceText(admin.locator('.topbar [data-field=name]'), '小王编程课');
+  assert.equal(admin.url(), `${BASE}/`, '编辑模式下点站名不跳转');
+
+  // 首屏按钮：直接改文字；点 ⚙ 把第二个按钮改成指向某篇教程、换成主按钮样式
+  await replaceText(admin.locator('[data-list=heroButtons] [data-item]').first().locator('[data-sub=label]'), '立刻开始 →');
+  await admin.locator('[data-list=heroButtons] [data-item]').nth(1).locator('[data-link-edit]').click();
+  await admin.fill('#link-dialog input[name=label]', '先学 Git');
+  await admin.selectOption('#link-dialog select[name=target]', '/tutorials/git-first-commit/');
+  await admin.selectOption('#link-dialog select[name=style]', 'primary');
+  assert.ok(await admin.locator('#link-dialog .ld-custom').isHidden(), '选了现成目标时不显示网址输入框');
+  await shot(admin, '链接编辑框');
+  await admin.click('#link-dialog button[type=submit]');
+
+  // 底部联系方式：新增一个按钮（自定义网址），删除「邮箱」
+  await admin.click('[data-add-item=contacts]');
+  assert.ok(await admin.locator('#link-dialog .ld-style').isHidden(), '联系方式没有按钮样式选项');
+  assert.ok(await admin.locator('#link-dialog .ld-custom').isVisible(), '自定义网址时显示输入框');
+  await admin.fill('#link-dialog input[name=label]', 'B站');
+  await admin.fill('#link-dialog input[name=custom]', 'https://space.bilibili.com/1');
+  await admin.click('#link-dialog button[type=submit]');
+  await admin.locator('[data-list=contacts] [data-item]', { hasText: '邮箱' }).locator('[data-link-edit]').click();
+  await admin.click('#link-dialog [data-ld-delete]');
+
+  // 页脚：新增一个链接；导航：改一个名字
+  await admin.click('[data-add-item=footerLinks]');
+  await admin.fill('#link-dialog input[name=label]', '回到顶部');
+  await admin.selectOption('#link-dialog select[name=target]', '/');
+  await admin.click('#link-dialog button[type=submit]');
+  await replaceText(admin.locator('[data-list=nav] [data-item]').first().locator('[data-sub=label]'), '全部教程');
+
+  // 小标题、统计说明
+  await replaceText(admin.locator('[data-field=faqTitle]'), '大家常问');
+  await replaceText(admin.locator('[data-list=statLabels] [data-sub]').first(), '篇干货');
+
+  // 区块：隐藏学习路线，把常见问题上移一格
+  await admin.locator('[data-section=roadmap] [data-sec=toggle]').click();
+  await admin.locator('[data-section=faq] [data-sec=up]').click();
+
+  // 站点设置对话框：改浏览器标签副标题
   await admin.click('.editbar [data-action=settings]');
-  await admin.fill('#settings-dialog input[name=name]', '小王编程课');
-  await admin.click('#settings-dialog [data-add=contacts]');
-  await admin.locator('#settings-dialog .row-contacts').last().locator('[data-k=label]').fill('B站');
-  await admin.locator('#settings-dialog .row-contacts').last().locator('[data-k=href]').fill('https://space.bilibili.com/1');
+  await admin.fill('#settings-dialog input[name=tagline]', '新人上手指南');
   await shot(admin, '站点设置对话框');
   await admin.click('#settings-dialog button[type=submit]');
 
@@ -112,19 +154,43 @@ try {
   await Promise.all([admin.waitForEvent('load'), admin.click('.editbar [data-action=save]')]);
   await admin.waitForSelector('text=三天学会写代码');
   assert.ok(await admin.evaluate(() => document.documentElement.classList.contains('editing')), '保存后保持编辑模式');
-  log('首页文案、常见问题、学习路线、站点设置在页面上直接修改并保存');
+  log('首页文案、按钮、顶栏、页脚、区块顺序和显示都在页面上直接修改并保存');
 
   // 访客视角确认已生效
   const guest = await newPage();
   await guest.goto(`${BASE}/`);
   await guest.waitForSelector('h1 >> text=三天学会写代码');
   assert.match(await guest.textContent('.brand-name'), /小王编程课/);
+  assert.match(await guest.textContent('.brand-mark'), /王课/);
+  assert.match(await guest.textContent('.footer'), /小王编程课/, '页脚的站名同步更新');
+  assert.match(await guest.title(), /新人上手指南/);
   assert.match(await guest.textContent('.hero-desc'), /（已在线修改）/);
+  const heroButtons = guest.locator('.hero-actions a');
+  assert.deepEqual(await heroButtons.allTextContents(), ['立刻开始 →', '先学 Git']);
+  assert.equal(await heroButtons.nth(1).getAttribute('href'), '/tutorials/git-first-commit/');
+  assert.match(await heroButtons.nth(1).getAttribute('class'), /btn-primary/);
+  assert.match(await heroButtons.nth(0).getAttribute('href'), /^\/tutorials\//);
+  assert.deepEqual(await guest.locator('.cta-links a').allTextContents(), ['GitHub', 'B站']);
+  assert.equal(await guest.locator('.cta-links a', { hasText: 'B站' }).getAttribute('href'), 'https://space.bilibili.com/1');
+  assert.equal(await guest.locator('.footer-links a', { hasText: '回到顶部' }).getAttribute('href'), '/');
+  assert.equal(await guest.locator('.nav-links a').first().textContent(), '全部教程');
+  assert.equal(await guest.locator('#faq h2').textContent(), '大家常问');
+  assert.match(await guest.textContent('.stats'), /篇干货/);
+  assert.equal(await guest.locator('#roadmap').count(), 0, '学习路线已隐藏');
+  const order = await guest.locator('[data-section]').evaluateAll((els) => els.map((e) => e.dataset.section));
+  assert.deepEqual(order, ['hero', 'faq', 'tutorials', 'contact'], '常见问题上移到教程列表前面');
   assert.equal(await guest.locator('#faq summary', { hasText: '线上编辑的问题？' }).count(), 1);
-  assert.equal(await guest.locator('.roadmap .step').count(), 2);
-  assert.equal(await guest.locator('.cta-links a', { hasText: 'B站' }).count(), 1);
   assert.equal(await guest.locator('.editbar').count(), 0);
-  log('访客刷新后看到全部修改，且没有编辑入口');
+  assert.equal(await guest.locator('.link-gear').count(), 0);
+  await shot(guest, '首页-访客视角');
+  log('访客刷新后看到全部修改（含按钮、链接、区块顺序），且没有编辑入口');
+
+  // 再把学习路线显示回来，确认删除的那一步确实删掉了
+  await admin.locator('[data-section=roadmap] [data-sec=toggle]').click();
+  await Promise.all([admin.waitForEvent('load'), admin.click('.editbar [data-action=save]')]);
+  await guest.reload();
+  assert.equal(await guest.locator('.roadmap .step').count(), 2);
+  log('隐藏的区块可以重新显示');
 
   // ---------------------------------------------------------- 3. 新建并发布教程
   await Promise.all([admin.waitForURL(/\/tutorials\/tutorial-/), admin.click('#new-tutorial')]);

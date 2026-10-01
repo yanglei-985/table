@@ -10,6 +10,7 @@ export const tutorialsPart = definePart({
   name: '教程部',
   duty: '教程分类和列表标题；每篇教程是独立单元，有自己的内容、草稿状态和历史版本',
   schema: z.object({
+    tutorialsEyebrow: text(30),
     tutorialsTitle: line(40),
     tutorialsDesc: text(120),
     // 教程分类：key 是英文标识，教程用它归类
@@ -26,6 +27,7 @@ export const tutorialsPart = definePart({
       .refine((list) => new Set(list.map((c) => c.key)).size === list.length, '分类标识不能重复'),
   }),
   defaults: {
+    tutorialsEyebrow: 'TUTORIALS',
     tutorialsTitle: '全部教程',
     tutorialsDesc: '按分类筛选，或直接搜索你想学的内容。',
     categories: [

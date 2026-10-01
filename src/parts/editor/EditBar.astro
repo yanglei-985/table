@@ -1,10 +1,27 @@
 ---
-// 编辑部 · 管理员专用：页面底部的编辑工具栏 + 「站点设置」对话框
+// 编辑部 · 管理员专用：页面底部的编辑工具栏 + 「站点设置」对话框 + 链接编辑框
 import { allParts } from '../index';
+import { listTutorials } from '../tutorials/store';
+import { sectionNames } from '../landing/part';
 import { safeJson } from '../../core/util';
+
+const published = listTutorials();
+const firstTutorial = published.find((t) => t.featured) ?? published[0];
+// 链接编辑框里可以直接选的目标
+const linkTargets = {
+  first: firstTutorial ? `/tutorials/${firstTutorial.slug}/` : null,
+  anchors: [
+    { label: '第一篇教程（自动）', href: '@first' },
+    { label: '首页', href: '/' },
+    ...(['tutorials', 'roadmap', 'faq', 'contact'] as const).map((id) => ({ label: `首页 · ${sectionNames[id]}`, href: `#${id}` })),
+    { label: '账号中心', href: '/account' },
+  ],
+  tutorials: published.map((t) => ({ label: t.title, href: `/tutorials/${t.slug}/` })),
+};
 ---
 
 <script type="application/json" id="site-parts" set:html={safeJson(allParts())} />
+<script type="application/json" id="link-targets" set:html={safeJson(linkTargets)} />
 
 <div class="editbar" role="toolbar" aria-label="编辑工具栏">
   <button class="eb-toggle" type="button" data-action="toggle" aria-pressed="false">
@@ -38,12 +55,6 @@ import { safeJson } from '../../core/util';
       </section>
 
       <section class="sd-group">
-        <h3>联系方式 <small>落地部 · 链接以 https://、mailto: 或 tel: 开头</small></h3>
-        <div class="rows" data-rows="contacts"></div>
-        <button type="button" class="sd-add" data-add="contacts">＋ 添加联系方式</button>
-      </section>
-
-      <section class="sd-group">
         <h3>教程分类 <small>教程部 · 标识用小写英文，教程靠它归类，已有教程在用的分类不能删除</small></h3>
         <div class="rows" data-rows="categories"></div>
         <button type="button" class="sd-add" data-add="categories">＋ 添加分类</button>
@@ -62,6 +73,35 @@ import { safeJson } from '../../core/util';
   </form>
 </dialog>
 
+<dialog class="sd ld" id="link-dialog" aria-labelledby="ld-title">
+  <form method="dialog" class="sd-form">
+    <header class="sd-head">
+      <h2 id="ld-title">编辑链接 / 按钮</h2>
+      <button type="button" class="sd-x" data-ld-cancel aria-label="关闭">×</button>
+    </header>
+    <div class="sd-body">
+      <section class="sd-group">
+        <label>文字 <input name="label" maxlength="30" /></label>
+        <label>点击后去哪 <select name="target"></select></label>
+        <label class="ld-custom" hidden>网址 <input name="custom" maxlength="300" placeholder="https://… 或 /tutorials/… 或 mailto:…" /></label>
+        <label class="ld-style" hidden>样式
+          <select name="style">
+            <option value="primary">主按钮（渐变色）</option>
+            <option value="ghost">次按钮（描边）</option>
+          </select>
+        </label>
+        <p class="ld-error form-error" role="alert"></p>
+      </section>
+    </div>
+    <footer class="sd-foot ld-foot">
+      <button type="button" class="btn btn-ghost ld-delete" data-ld-delete>删除</button>
+      <span class="ld-spacer"></span>
+      <button type="button" class="btn btn-ghost" data-ld-cancel>取消</button>
+      <button type="submit" class="btn btn-primary">确定</button>
+    </footer>
+  </form>
+</dialog>
+
 <script>
   import {
     discard,
@@ -74,6 +114,12 @@ import { safeJson } from '../../core/util';
     touchPart,
     wantsEditing,
   } from './client/edit-mode';
+  import { enableInlineFields } from './client/inline-fields';
+  import { setupLinkEditor } from './client/link-editor';
+
+  // 页面上所有带标记的文字、列表、链接都接入编辑（顶栏、页脚、首页各区块……）
+  enableInlineFields();
+  setupLinkEditor();
 
   const bar = document.querySelector<HTMLElement>('.editbar')!;
   const toggle = bar.querySelector<HTMLButtonElement>('[data-action="toggle"]')!;
@@ -136,12 +182,9 @@ import { safeJson } from '../../core/util';
     footerNote: 'design',
     inviteMessage: 'accounts',
   } as const;
-  const rowOwner = { contacts: 'landing', categories: 'tutorials' } as const;
+  const rowOwner = { categories: 'tutorials' } as const;
 
   const rowTemplates = {
-    contacts: (r: { label?: string; href?: string } = {}) => `
-      <input data-k="label" placeholder="名称，如 微信" maxlength="20" required value="${esc(r.label)}" />
-      <input data-k="href" placeholder="https://…" maxlength="300" required value="${esc(r.href)}" />`,
     categories: (r: { key?: string; name?: string; desc?: string } = {}) => `
       <input data-k="key" placeholder="标识，如 tools" maxlength="20" required pattern="[a-z0-9\\-]+" value="${esc(r.key)}" />
       <input data-k="name" placeholder="名称" maxlength="20" required value="${esc(r.name)}" />
@@ -301,13 +344,21 @@ import { safeJson } from '../../core/util';
   .sd :global(input:focus),
   .sd textarea:focus { border-color: var(--brand); }
   .sd :global(.row) { display: grid; gap: 8px; align-items: center; }
-  .sd :global(.row-contacts) { grid-template-columns: 1fr 2fr 32px; }
   .sd :global(.row-categories) { grid-template-columns: 1fr 1fr 2fr 32px; }
   .sd :global(.row-x) { width: 32px; height: 32px; border-radius: 8px; color: var(--text-3); cursor: pointer; font-size: 18px; }
   .sd :global(.row-x:hover) { color: var(--danger-text); background: color-mix(in srgb, var(--danger) 10%, transparent); }
   .sd-add { justify-self: start; padding: 6px 12px; border-radius: 8px; color: var(--brand-text); cursor: pointer; font-size: 14px; }
   .sd-add:hover { background: var(--brand-soft); }
   .rows { display: grid; gap: 8px; }
+
+  .sd :global(select),
+  .sd select { width: 100%; height: 38px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--bg); color: var(--text); }
+  .ld { width: min(480px, calc(100vw - 24px)); }
+  .sd [hidden] { display: none !important; }
+  .ld-foot { justify-content: flex-start; }
+  .ld-spacer { flex: 1; }
+  .ld-delete { color: var(--danger-text); }
+  .ld-error { margin: 0; }
 
   @media (max-width: 560px) {
     label { grid-template-columns: 1fr; gap: 4px; }

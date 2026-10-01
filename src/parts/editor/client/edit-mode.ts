@@ -1,7 +1,8 @@
 // 编辑部 · 编辑模式（仅管理员）：工具栏和各页面共用的浏览器端逻辑
 //
 // 编辑部自己不存数据：页面上改了哪个部的内容，就只把那个部交给 /api/parts/<id> 保存。
-// 页面通过 registerPage() 接入；工具栏负责开关、保存、放弃和未保存提醒。
+// 页面上的各块（顶栏、页脚、首页区块、教程编辑器……）各自用 registerPage() 接入，可以同时有多个；
+// 工具栏负责开关、保存、放弃和未保存提醒。
 // 进入编辑模式时 <html> 上会加 .editing，页面里所有可编辑元素（EDITABLE）变为可直接编辑。
 
 export interface EditablePage {
@@ -18,12 +19,12 @@ export { api };
 const KEY = 'edit-mode';
 /** 可直接编辑的元素：站点文案字段、教程标题等、列表条目里的字段 */
 const EDITABLE = '[data-field], [data-edit], [data-sub]';
-let page: EditablePage | null = null;
+const handlers: EditablePage[] = [];
 let dirty = false;
 const listeners = new Set<(on: boolean) => void>();
 
 export function registerPage(p: EditablePage) {
-  page = p;
+  handlers.push(p);
 }
 
 export function isEditing() {
@@ -86,13 +87,14 @@ export function touchPart(id: PartId) {
 }
 
 export async function save() {
-  page?.collect?.();
+  for (const h of handlers) h.collect?.();
   for (const id of PART_ORDER) {
     if (!touched.has(id)) continue;
     await api('PUT', `/api/parts/${id}`, partData(id));
     touched.delete(id);
   }
-  const next = await page?.commit?.();
+  let next: string | void = undefined;
+  for (const h of handlers) next = (await h.commit?.()) || next;
   dirty = false;
   if (next) location.href = next;
   else location.reload();
@@ -115,7 +117,7 @@ export function hasUnsavedChanges() {
 
 /** 读取可编辑元素的纯文本（去掉首尾空白，合并多余换行） */
 export function textOf(el: Element | null) {
-  return (el?.textContent ?? '').replace(/ /g, ' ').trim();
+  return (el?.textContent ?? '').replace(/\u00a0/g, ' ').trim();
 }
 
 /** 读取页面里嵌入的 JSON 数据 */
@@ -140,6 +142,17 @@ document.addEventListener('keydown', (e) => {
   );
   if (el && isEditing() && e.key === 'Enter') e.preventDefault();
 });
+// 编辑模式下点可编辑的链接 / 按钮不跳转，方便直接改文字（教程卡片等普通链接照常跳转）
+document.addEventListener(
+  'click',
+  (e) => {
+    if (!isEditing()) return;
+    const t = e.target as HTMLElement;
+    const a = t.closest('a');
+    if (a && (a.matches('[data-v-href]') || a.querySelector('[contenteditable]') || t.closest('[contenteditable]'))) e.preventDefault();
+  },
+  true,
+);
 addEventListener('beforeunload', (e) => {
   if (dirty) e.preventDefault();
 });

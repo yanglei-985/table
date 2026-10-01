@@ -1,22 +1,36 @@
 ---
-// 首页 = 落地部的各个区块 + 教程部的教程列表，每块各管各的内容
+// 首页：落地部决定区块的顺序和显示；每个区块各管各的内容（教程列表归教程部）
 import Layout from '../parts/design/Layout.astro';
+import SectionFrame from '../parts/landing/components/SectionFrame.astro';
 import Hero from '../parts/landing/sections/Hero.astro';
 import Roadmap from '../parts/landing/sections/Roadmap.astro';
 import Faq from '../parts/landing/sections/Faq.astro';
 import Contact from '../parts/landing/sections/Contact.astro';
 import TutorialGrid from '../parts/tutorials/components/TutorialGrid.astro';
+import { landing } from '../parts/index';
+import { sectionIds } from '../parts/landing/part';
+
+const components = { hero: Hero, roadmap: Roadmap, tutorials: TutorialGrid, faq: Faq, contact: Contact };
+const isAdmin = Astro.locals.user?.role === 'admin';
+const saved = landing().sections;
+// 以后新增的区块会自动接在末尾
+const order = [
+  ...saved,
+  ...sectionIds.filter((id) => !saved.some((s) => s.id === id)).map((id) => ({ id, visible: true })),
+];
 ---
 
 <Layout editable>
-  <Hero />
-  <Roadmap />
-  <TutorialGrid />
-  <Faq />
-  <Contact />
+  <div data-sections>
+    {order
+      .filter((s) => s.visible || isAdmin)
+      .map((s) => {
+        const Section = components[s.id];
+        return (
+          <SectionFrame id={s.id} visible={s.visible}>
+            <Section />
+          </SectionFrame>
+        );
+      })}
+  </div>
 </Layout>
-
-<script>
-  import { enableInlineFields } from '../parts/editor/client/inline-fields';
-  enableInlineFields();
-</script>

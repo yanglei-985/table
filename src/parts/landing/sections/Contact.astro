@@ -1,8 +1,10 @@
 ---
-// 落地部 · 联系方式（链接在「站点设置」里修改）
+// 落地部 · 联系方式：按钮的文字可直接改，点 ⚙ 改链接
 import { landing } from '../../index';
+import EditableLink from '../../editor/EditableLink.astro';
 
 const page = landing();
+const isAdmin = Astro.locals.user?.role === 'admin';
 ---
 
 <section class="section" id="contact" data-part="landing">
@@ -12,11 +14,15 @@ const page = landing();
         <h2 data-field="contactTitle">{page.contactTitle}</h2>
         <p data-field="contactDesc" data-multiline data-placeholder="一句说明">{page.contactDesc}</p>
       </div>
-      <div class="cta-links">
-        {page.contacts.map((c) => (
-          <a class="btn btn-ghost" href={c.href} target="_blank" rel="noopener">{c.label}</a>
-        ))}
+      <div class="cta-links" data-list="contacts">
+        {page.contacts.map((c) => <EditableLink link={c} class="btn btn-ghost" />)}
+        {isAdmin && <button type="button" class="edit-btn edit-only add-link" data-add-item="contacts" data-open-link>＋ 联系方式</button>}
       </div>
+      {isAdmin && (
+        <template data-template="contacts">
+          <EditableLink link={{ label: '新联系方式', href: 'https://' }} class="btn btn-ghost" />
+        </template>
+      )}
     </div>
   </div>
 </section>
@@ -36,7 +42,7 @@ const page = landing();
   }
   .cta h2 { font-size: 24px; }
   .cta p { color: var(--text-2); margin-top: 6px; }
-  .cta-links { display: flex; flex-wrap: wrap; gap: 10px; }
+  .cta-links { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
   @media (max-width: 640px) {
     .cta { padding: 26px 22px; }
   }

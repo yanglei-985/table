@@ -313,3 +313,26 @@ textarea.input { height: auto; padding: 10px 12px; line-height: 1.6; resize: ver
   cursor: pointer;
 }
 .x:hover { color: var(--danger-text); background: color-mix(in srgb, var(--danger) 10%, transparent); }
+
+/* 编辑模式里可编辑链接 / 按钮右上角的 ⚙ */
+.elink { position: relative; }
+.link-gear {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--on-brand);
+  background: var(--brand);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--shade) 35%, transparent);
+  cursor: pointer;
+}
+.link-gear:hover { transform: scale(1.12); }
+html.editing .elink { outline: 1px dashed color-mix(in srgb, var(--brand) 40%, transparent); outline-offset: 3px; }
+.add-link { margin-left: 4px; }

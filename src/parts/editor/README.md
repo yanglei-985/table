@@ -6,6 +6,8 @@
 | --- | --- |
 | `EditBar.astro` | 页面底部的工具栏（编辑模式 / 站点设置 / 放弃 / 保存）和「站点设置」对话框 |
 | `client/edit-mode.ts` | 开关编辑模式、记录哪些部被改过、按顺序保存、未保存提醒 |
-| `client/inline-fields.ts` | 就地编辑的约定：`data-part`、`data-field`、`data-list`、`data-item`、`data-sub` |
+| `EditableLink.astro` | 可编辑的链接 / 按钮：文字直接改，⚙ 打开链接编辑框 |
+| `client/inline-fields.ts` | 就地编辑的约定：`data-part`、`data-field`、`data-list`、`data-item`、`data-sub`、`data-v-*`；页面加载时拍快照，只保存改过的部分 |
+| `client/link-editor.ts` | 链接编辑框：文字、点击后去哪（本站区块 / 某篇教程 / 自定义网址）、按钮样式、删除 |
 
 保存顺序：设计部 → 落地部 → 教程部 → 成员部 → 页面自己的数据（如教程正文），这样新加的分类可以马上用在教程上。

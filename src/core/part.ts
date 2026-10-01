@@ -81,6 +81,19 @@ export function partActivity(): Record<string, { updatedAt: string; updatedBy: s
 export const text = (max: number) => z.string().trim().max(max);
 export const line = (max: number) => z.string().trim().min(1, '不能为空').max(max);
 
+/**
+ * 链接地址：外部网址、邮件、电话、站内路径、页内锚点，或 @first（第一篇教程）。
+ * 不允许 javascript: 等可执行代码的写法。
+ */
+export const href = z
+  .string()
+  .trim()
+  .max(300)
+  .regex(/^(https?:\/\/|mailto:|tel:|\/(?!\/)|#|@first$)/, '链接需以 https://、mailto:、tel:、/ 或 # 开头');
+
+/** 一个可编辑的链接或按钮 */
+export const link = z.object({ label: line(30), href });
+
 /** 把 zod 错误整理成一句中文提示 */
 export function describeError(error: z.ZodError) {
   const first = error.issues[0];

@@ -14,7 +14,7 @@ const usedCategories = config.categories.filter((c) => tutorials.some((t) => t.c
 <section class="section" id="tutorials" data-part="tutorials">
   <div class="container">
     <div class="section-head">
-      <span class="eyebrow">TUTORIALS</span>
+      <span class="eyebrow" data-field="tutorialsEyebrow" data-placeholder="小标题">{config.tutorialsEyebrow}</span>
       <h2 data-field="tutorialsTitle">{config.tutorialsTitle}</h2>
       <p data-field="tutorialsDesc" data-placeholder="一句说明">{config.tutorialsDesc}</p>
       {isAdmin && (

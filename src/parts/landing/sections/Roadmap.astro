@@ -10,7 +10,7 @@ const isAdmin = Astro.locals.user?.role === 'admin';
   <section class="section" id="roadmap" data-part="landing">
     <div class="container">
       <div class="section-head">
-        <span class="eyebrow">ROADMAP</span>
+        <span class="eyebrow" data-field="roadmapEyebrow" data-placeholder="小标题">{page.roadmapEyebrow}</span>
         <h2 data-field="roadmapTitle">{page.roadmapTitle}</h2>
         <p data-field="roadmapDesc" data-placeholder="一句说明">{page.roadmapDesc}</p>
       </div>

@@ -154,6 +154,41 @@ test('各部只接受自己的字段：空标题和非法链接会被拒绝', as
   assert.equal((await admin.put('/api/parts/design', { ...settings.design, name: '' })).status, 400);
 });
 
+test('链接地址只允许安全的写法', async () => {
+  const nav = (href) => admin.put('/api/parts/design', { ...settings.design, nav: [{ label: 'x', href }] });
+  for (const bad of ['javascript:alert(1)', '//evil.example', 'data:text/html,1', 'ftp://x']) assert.equal((await nav(bad)).status, 400, bad);
+  for (const good of ['#faq', '/tutorials/git-first-commit/', 'https://example.com', 'mailto:a@b.c', '@first'])
+    assert.equal((await nav(good)).status, 200, good);
+  // 恢复默认导航
+  assert.equal((await admin.put('/api/parts/design', settings.design)).status, 200);
+});
+
+test('首页按钮、页脚链接和区块显示都能编辑', async () => {
+  const landing = {
+    ...settings.landing,
+    heroButtons: [{ label: '马上开始', href: '@first', style: 'primary' }],
+    sections: settings.landing.sections.map((s) => (s.id === 'roadmap' ? { ...s, visible: false } : s)),
+  };
+  assert.equal((await admin.put('/api/parts/landing', landing)).status, 200);
+  assert.equal((await admin.put('/api/parts/design', { ...settings.design, footerLinks: [{ label: '交流群', href: 'https://example.com/group' }] })).status, 200);
+
+  const home = (await guest.get('/')).data;
+  assert.match(home, /<a[^>]*href="\/tutorials\/[a-z0-9-]+\/"[^>]*data-v-href="@first"[^>]*><span data-sub="label"[^>]*>马上开始/, '@first 指向第一篇教程');
+  assert.doesNotMatch(home, /浏览全部教程/);
+  assert.doesNotMatch(home, /id="roadmap"/, '隐藏的区块访客看不到');
+  assert.match(home, /交流群/);
+  assert.doesNotMatch(home, /link-gear/, '访客页面没有编辑按钮');
+
+  const adminHome = (await admin.get('/')).data;
+  assert.match(adminHome, /id="roadmap"/, '管理员仍能看到隐藏的区块以便恢复');
+  assert.match(adminHome, /section-frame is-hidden/);
+
+  // 恢复
+  assert.equal((await admin.put('/api/parts/landing', settings.landing)).status, 200);
+  assert.equal((await admin.put('/api/parts/design', settings.design)).status, 200);
+  assert.match((await guest.get('/')).data, /id="roadmap"/);
+});
+
 test('教程部不能删除仍有教程在用的分类', async () => {
   const res = await admin.put('/api/parts/tutorials', {
     ...settings.tutorials,

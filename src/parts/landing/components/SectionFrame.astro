@@ -1,0 +1,110 @@
+---
+// 落地部 · 首页区块的外框：编辑模式下可以上移、下移、隐藏 / 显示这一块
+import { sectionNames, type sectionIds } from '../part';
+
+interface Props {
+  id: (typeof sectionIds)[number];
+  visible: boolean;
+}
+
+const { id, visible } = Astro.props;
+const isAdmin = Astro.locals.user?.role === 'admin';
+---
+
+<div class:list={['section-frame', { 'is-hidden': !visible }]} data-section={id} data-visible={String(visible)}>
+  {isAdmin && (
+    <div class="section-tools edit-only" role="toolbar" aria-label={`${sectionNames[id]}区块`}>
+      <span class="st-name">{sectionNames[id]}</span>
+      <span class="st-hidden">已隐藏 · 访客看不到</span>
+      <button type="button" data-sec="up" title="上移">↑</button>
+      <button type="button" data-sec="down" title="下移">↓</button>
+      <button type="button" data-sec="toggle" class="st-toggle"><span class="st-hide">隐藏</span><span class="st-show">显示</span></button>
+    </div>
+  )}
+  <slot />
+</div>
+
+{isAdmin && (
+  <script>
+    import { markDirty, partData, registerPage, touchPart } from '../../editor/client/edit-mode';
+
+    const container = document.querySelector<HTMLElement>('[data-sections]');
+    if (container && document.getElementById('site-parts')) {
+      const read = () =>
+        Array.from(container.querySelectorAll<HTMLElement>(':scope > [data-section]'), (el) => ({
+          id: el.dataset.section!,
+          visible: el.dataset.visible === 'true',
+        }));
+      const original = JSON.stringify(read());
+
+      registerPage({
+        collect() {
+          const now = read();
+          if (JSON.stringify(now) === original) return;
+          // 访客看不到的隐藏区块也在页面上（管理员可见），所以 DOM 里就是完整的顺序
+          partData('landing').sections = now;
+          touchPart('landing');
+        },
+      });
+
+      container.addEventListener('click', (e) => {
+        const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-sec]');
+        if (!btn) return;
+        const frame = btn.closest<HTMLElement>('[data-section]')!;
+        const action = btn.dataset.sec;
+        if (action === 'up' && frame.previousElementSibling) {
+          container.insertBefore(frame, frame.previousElementSibling);
+        } else if (action === 'down' && frame.nextElementSibling) {
+          container.insertBefore(frame.nextElementSibling, frame);
+        } else if (action === 'toggle') {
+          const visible = frame.dataset.visible !== 'true';
+          frame.dataset.visible = String(visible);
+          frame.classList.toggle('is-hidden', !visible);
+        } else {
+          return;
+        }
+        markDirty();
+        frame.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      });
+    }
+  </script>
+)}
+
+<style>
+  .section-frame { position: relative; }
+  .section-frame.is-hidden { display: none; }
+  :global(html.editing) .section-frame { outline: 1px dashed var(--line-2); outline-offset: -8px; border-radius: var(--radius); }
+  :global(html.editing) .section-frame.is-hidden { display: block; opacity: 0.45; }
+  .section-tools {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 6px 4px 12px;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+    box-shadow: var(--shadow);
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .st-name { font-weight: 700; margin-right: 4px; }
+  .st-hidden { display: none; color: var(--warn-text); margin-right: 4px; }
+  .is-hidden .st-hidden { display: inline; }
+  .section-tools button {
+    min-width: 30px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    color: var(--text-2);
+    cursor: pointer;
+  }
+  .section-tools button:hover { color: var(--text); background: color-mix(in srgb, var(--ink) 8%, transparent); }
+  .st-show { display: none; }
+  .is-hidden .st-show { display: inline; }
+  .is-hidden .st-hide { display: none; }
+</style>
