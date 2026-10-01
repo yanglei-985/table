@@ -1,0 +1,64 @@
+---
+// 成员部 · 账号中心里的「网站结构」：每个部负责什么、最近谁改过；每篇教程是一个独立单元
+import { parts, editorDepartment } from '../../index';
+import { partActivity } from '../../../core/part';
+import { tutorialActivity } from '../../tutorials/store';
+import { formatDate } from '../../../core/util';
+
+const activity = partActivity();
+const tutorials = tutorialActivity();
+const departments = [...Object.values(parts), editorDepartment];
+---
+
+<div class="card panel structure" id="structure">
+  <div>
+    <h2>网站结构</h2>
+    <p class="hint">网站分成几个部，每个部只管自己的内容，保存一个部不会改动其他部；每篇教程也是独立的一份，增删改都不需要重新构建网站。</p>
+  </div>
+  <ul class="parts">
+    {departments.map((d) => {
+      const a = activity[d.id];
+      return (
+        <li class="part">
+          <p class="part-name"><strong>{d.name}</strong> <code>{d.id}</code></p>
+          <p class="part-duty">{d.duty}</p>
+          <p class="part-meta">{a ? `最近修改：${formatDate(a.updatedAt)}${a.updatedBy ? ` · ${a.updatedBy}` : ''}` : '不保存数据'}</p>
+        </li>
+      );
+    })}
+  </ul>
+  <details class="units">
+    <summary>教程部下的教程单元（{tutorials.length}）</summary>
+    <table>
+      <thead><tr><th>教程</th><th>网址</th><th>状态</th><th>最近修改</th><th>历史版本</th></tr></thead>
+      <tbody>
+        {tutorials.map((t) => (
+          <tr>
+            <td><a href={`/tutorials/${t.slug}/`}>{t.title}</a></td>
+            <td><code>{t.slug}</code></td>
+            <td>{t.draft ? <span class="chip">草稿</span> : <span class="chip chip-ok">已发布</span>}</td>
+            <td>{formatDate(t.updatedAt)}{t.updatedBy ? ` · ${t.updatedBy}` : ''}</td>
+            <td>{t.revisions} 份</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </details>
+</div>
+
+<style>
+  .panel { padding: 24px; display: grid; gap: 16px; }
+  h2 { font-size: 20px; }
+  .hint { font-size: 14px; color: var(--text-3); margin-top: 4px; }
+  .parts { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .part { padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; display: grid; gap: 4px; align-content: start; }
+  .part-name code { font-family: var(--mono); font-size: 12px; color: var(--text-3); margin-left: 4px; }
+  .part-duty { font-size: 14px; color: var(--text-2); }
+  .part-meta { font-size: 12px; color: var(--text-3); }
+  .units summary { cursor: pointer; font-size: 14px; color: var(--text-2); }
+  .units table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; display: block; overflow-x: auto; white-space: nowrap; }
+  th, td { padding: 8px 12px; border-bottom: 1px solid var(--line); text-align: left; }
+  th { color: var(--text-3); font-weight: 600; }
+  td a { color: var(--brand-text); }
+  td code { font-family: var(--mono); font-size: 13px; }
+</style>

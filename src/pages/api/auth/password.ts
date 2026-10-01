@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { checkCredentials, setPassword } from '../../../server/auth.mjs';
-import { handle, HttpError, json, readJson, requireUser } from '../../../server/api';
+import { checkCredentials, setPassword } from '../../../parts/accounts/auth.mjs';
+import { handle, HttpError, json, readJson, requireUser } from '../../../core/http';
 import { setSessionCookie } from './login';
 
 // 修改自己的密码；成功后其他设备上的登录会失效

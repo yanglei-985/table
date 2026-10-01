@@ -1,0 +1,69 @@
+---
+// 落地部 · 常见问题（浏览时是折叠面板，编辑时展开成可编辑卡片）
+import { landing } from '../../index';
+
+const page = landing();
+const isAdmin = Astro.locals.user?.role === 'admin';
+---
+
+{(page.faq.length > 0 || isAdmin) && (
+  <section class="section" id="faq" data-part="landing">
+    <div class="container narrow">
+      <div class="section-head">
+        <span class="eyebrow">FAQ</span>
+        <h2>常见问题</h2>
+      </div>
+      <div class="faq view-only">
+        {page.faq.map((item, i) => (
+          <details class="card" open={i === 0}>
+            <summary>{item.q}</summary>
+            <p>{item.a}</p>
+          </details>
+        ))}
+      </div>
+      {isAdmin && (
+        <div class="faq edit-only" data-list="faq">
+          {page.faq.map((item) => (
+            <div class="card faq-edit" data-item>
+              <p class="faq-q" data-sub="q" data-placeholder="问题">{item.q}</p>
+              <p class="faq-a" data-sub="a" data-multiline data-placeholder="回答">{item.a}</p>
+              <button type="button" class="x" data-remove aria-label="删除这个问题">×</button>
+            </div>
+          ))}
+          <p><button type="button" class="edit-btn" data-add-item="faq">＋ 添加问题</button></p>
+        </div>
+      )}
+      <template data-template="faq">
+        <div class="card faq-edit" data-item>
+          <p class="faq-q" data-sub="q" data-placeholder="问题">新问题？</p>
+          <p class="faq-a" data-sub="a" data-multiline data-placeholder="回答">回答内容。</p>
+          <button type="button" class="x" data-remove aria-label="删除这个问题">×</button>
+        </div>
+      </template>
+    </div>
+  </section>
+)}
+
+<style>
+  .narrow { max-width: 760px; }
+  .faq { display: flex; flex-direction: column; gap: 12px; }
+  details { padding: 0 22px; transition: border-color 0.2s; }
+  details[open] { border-color: color-mix(in srgb, var(--brand) 35%, transparent); }
+  summary {
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 0;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '+'; font-size: 20px; color: var(--text-3); transition: transform 0.2s; }
+  details[open] summary::after { transform: rotate(45deg); color: var(--brand-2); }
+  details p { color: var(--text-2); padding-bottom: 18px; margin-top: -4px; }
+  .faq-edit { position: relative; padding: 18px 48px 18px 22px; }
+  .faq-q { font-weight: 600; }
+  .faq-a { color: var(--text-2); margin-top: 10px; white-space: pre-wrap; }
+</style>

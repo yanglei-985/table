@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { revokeInvite } from '../../../server/invites.mjs';
-import { handle, json, requireUser } from '../../../server/api';
+import { revokeInvite } from '../../../parts/accounts/invites.mjs';
+import { handle, json, requireUser } from '../../../core/http';
 
 export const DELETE: APIRoute = (context) =>
   handle(() => {

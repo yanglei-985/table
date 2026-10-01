@@ -5,10 +5,10 @@
 //   npm run admin -- password <用户名> <新密码>       重置任意账号的密码
 //   npm run admin -- list                             列出所有账号
 //   npm run admin -- backup [文件路径]                 备份数据库（网站运行中也可以执行）
-import { adminCount, createUser, setPassword } from '../src/server/auth.mjs';
+import { adminCount, createUser, setPassword } from '../src/parts/accounts/auth.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
-import { dataDir, getDb } from '../src/server/db.mjs';
+import { dataDir, getDb } from '../src/core/db.mjs';
 
 const [command, ...args] = process.argv.slice(2);
 

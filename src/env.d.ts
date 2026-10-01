@@ -2,6 +2,6 @@
 
 declare namespace App {
   interface Locals {
-    user: import('./server/auth.mjs').User | null;
+    user: import('./parts/accounts/auth.mjs').User | null;
   }
 }

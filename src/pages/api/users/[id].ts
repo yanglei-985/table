@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import { getDb } from '../../../server/db.mjs';
-import { getUserById } from '../../../server/auth.mjs';
-import { handle, HttpError, json, readJson, requireUser } from '../../../server/api';
+import { getDb } from '../../../core/db.mjs';
+import { getUserById } from '../../../parts/accounts/auth.mjs';
+import { handle, HttpError, json, readJson, requireUser } from '../../../core/http';
 
 function target(context: Parameters<APIRoute>[0]) {
   const admin = requireUser(context, 'admin');

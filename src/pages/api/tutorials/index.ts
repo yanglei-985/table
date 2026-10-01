@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { createTutorial } from '../../../server/content';
-import { handle, json, requireUser } from '../../../server/api';
+import { createTutorial } from '../../../parts/tutorials/store';
+import { handle, json, requireUser } from '../../../core/http';
 
 export const POST: APIRoute = (context) =>
   handle(() => {

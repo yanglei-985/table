@@ -1,16 +1,16 @@
 ---
-import Base from '../layouts/Base.astro';
-import { url } from '../lib';
+import Layout from '../parts/design/Layout.astro';
+import { url } from '../core/util';
 ---
 
-<Base title="页面不存在">
+<Layout title="页面不存在">
   <section class="container nf">
     <p class="code gradient-text">404</p>
     <h1>这一页走丢了</h1>
     <p>可能链接写错了，或者教程已经改名。回到首页找找看吧。</p>
     <a class="btn btn-primary" href={url('')}>回到首页</a>
   </section>
-</Base>
+</Layout>
 
 <style>
   .nf { text-align: center; padding: 120px 20px; display: flex; flex-direction: column; align-items: center; gap: 14px; }

@@ -164,7 +164,10 @@ try {
   await invite.locator('button', { hasText: '复制邀请文案' }).click();
   const copied = await admin.evaluate(() => navigator.clipboard.readText());
   assert.ok(copied.includes(link) && copied.includes('小王编程课'), '邀请文案包含站名和链接');
-  await shot(admin, '账号中心-邀请', true);
+  for (const name of ['设计部', '落地部', '教程部', '成员部', '编辑部']) await admin.locator('#structure', { hasText: name }).waitFor();
+  await admin.locator('#structure summary').click();
+  await admin.locator('#structure td', { hasText: 'browser-lesson' }).waitFor();
+  await shot(admin, '账号中心-邀请与网站结构', true);
   log(`生成邀请链接和二维码，复制的邀请文案：${copied}`);
 
   // ---------------------------------------------------------- 5. 新成员注册

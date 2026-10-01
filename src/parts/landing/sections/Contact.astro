@@ -1,0 +1,43 @@
+---
+// 落地部 · 联系方式（链接在「站点设置」里修改）
+import { landing } from '../../index';
+
+const page = landing();
+---
+
+<section class="section" id="contact" data-part="landing">
+  <div class="container">
+    <div class="cta card">
+      <div>
+        <h2 data-field="contactTitle">{page.contactTitle}</h2>
+        <p data-field="contactDesc" data-multiline data-placeholder="一句说明">{page.contactDesc}</p>
+      </div>
+      <div class="cta-links">
+        {page.contacts.map((c) => (
+          <a class="btn btn-ghost" href={c.href} target="_blank" rel="noopener">{c.label}</a>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 36px;
+    background:
+      radial-gradient(500px 200px at 0% 0%, color-mix(in srgb, var(--brand) 22%, transparent), transparent 70%),
+      radial-gradient(500px 200px at 100% 100%, color-mix(in srgb, var(--brand-2) 14%, transparent), transparent 70%),
+      var(--surface);
+  }
+  .cta h2 { font-size: 24px; }
+  .cta p { color: var(--text-2); margin-top: 6px; }
+  .cta-links { display: flex; flex-wrap: wrap; gap: 10px; }
+  @media (max-width: 640px) {
+    .cta { padding: 26px 22px; }
+  }
+</style>

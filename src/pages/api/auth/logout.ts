@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { SESSION_COOKIE, deleteSession } from '../../../server/auth.mjs';
-import { handle, json } from '../../../server/api';
+import { SESSION_COOKIE, deleteSession } from '../../../parts/accounts/auth.mjs';
+import { handle, json } from '../../../core/http';
 
 export const POST: APIRoute = (context) =>
   handle(() => {

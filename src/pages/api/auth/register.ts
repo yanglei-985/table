@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { registerWithInvite } from '../../../server/invites.mjs';
-import { checkRateLimit, clientIp, handle, json, readJson, recordFailure } from '../../../server/api';
+import { registerWithInvite } from '../../../parts/accounts/invites.mjs';
+import { checkRateLimit, clientIp, handle, json, readJson, recordFailure } from '../../../core/http';
 import { setSessionCookie } from './login';
 
 export const POST: APIRoute = (context) =>

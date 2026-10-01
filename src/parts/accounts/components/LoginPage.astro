@@ -1,0 +1,43 @@
+---
+// 成员部 · 登录页
+import Layout from '../../design/Layout.astro';
+import AuthCard from './AuthCard.astro';
+
+interface Props {
+  /** 登录后跳回的本站地址 */
+  next: string;
+}
+
+const { next } = Astro.props;
+---
+
+<Layout title="登录">
+  <AuthCard title="登录" subtitle="还没有账号？向管理员要一个邀请链接。">
+    <form id="login" data-next={next}>
+      <label class="field">用户名<input class="input" name="username" autocomplete="username" required autofocus /></label>
+      <label class="field">密码<input class="input" name="password" type="password" autocomplete="current-password" required /></label>
+      <p class="form-error" role="alert"></p>
+      <button class="btn btn-primary" type="submit">登录</button>
+    </form>
+  </AuthCard>
+</Layout>
+
+<script>
+  import { api } from '../../../core/client/api';
+
+  const form = document.getElementById('login') as HTMLFormElement;
+  const error = form.querySelector('.form-error')!;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const button = form.querySelector('button')!;
+    button.disabled = true;
+    error.textContent = '';
+    try {
+      await api('POST', '/api/auth/login', Object.fromEntries(new FormData(form)));
+      location.href = form.dataset.next!;
+    } catch (err) {
+      error.textContent = (err as Error).message;
+      button.disabled = false;
+    }
+  });
+</script>

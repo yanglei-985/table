@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 
 const PORT = 4500 + Math.floor(Math.random() * 400);
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -85,14 +86,14 @@ test('访客可以浏览首页和教程，示例教程已导入', async () => {
   assert.equal(home.status, 200);
   assert.match(home.data, /新手上手站/);
   assert.match(home.data, /Git 入门/);
-  assert.doesNotMatch(home.data, /site-settings/, '访客页面不应包含编辑数据');
+  assert.doesNotMatch(home.data, /site-parts/, '访客页面不应包含编辑数据');
   const t = await guest.get('/tutorials/git-first-commit/');
   assert.equal(t.status, 200);
   assert.match(t.data, /callout-check/);
 });
 
 test('未登录不能修改内容', async () => {
-  assert.equal((await guest.put('/api/settings', {})).status, 401);
+  assert.equal((await guest.put('/api/parts/landing', {})).status, 401);
   assert.equal((await guest.post('/api/tutorials')).status, 401);
   assert.equal((await guest.post('/api/invites')).status, 401);
   assert.equal((await guest.get('/account')).status, 302);
@@ -109,9 +110,9 @@ test('管理员由环境变量自动创建，密码错误无法登录', async ()
 });
 
 test('拒绝跨站和非 JSON 的写请求', async () => {
-  assert.equal((await admin.raw('PUT', '/api/settings', undefined, { 'content-type': 'text/plain' })).status, 415);
-  assert.equal((await admin.put('/api/settings', {}, { origin: 'https://evil.example' })).status, 403);
-  assert.equal((await admin.put('/api/settings', {}, { origin: 'null' })).status, 403);
+  assert.equal((await admin.raw('PUT', '/api/parts/landing', undefined, { 'content-type': 'text/plain' })).status, 415);
+  assert.equal((await admin.put('/api/parts/landing', {}, { origin: 'https://evil.example' })).status, 403);
+  assert.equal((await admin.put('/api/parts/landing', {}, { origin: 'null' })).status, 403);
 });
 
 test('登录后只跳回本站页面', async () => {
@@ -122,33 +123,69 @@ test('登录后只跳回本站页面', async () => {
   assert.equal(await page('https://evil.example'), '/');
 });
 
-test('管理员页面带有编辑工具栏和当前文案', async () => {
+test('管理员页面带有编辑工具栏和各部的当前配置', async () => {
   const home = await admin.get('/');
-  const match = home.data.match(/<script type="application\/json" id="site-settings">([\s\S]*?)<\/script>/);
+  const match = home.data.match(/<script type="application\/json" id="site-parts">([\s\S]*?)<\/script>/);
   assert.ok(match, '管理员应看到编辑数据');
   settings = JSON.parse(match[1]);
+  assert.deepEqual(Object.keys(settings), ['design', 'landing', 'tutorials', 'accounts']);
   assert.match(home.data, /编辑模式/);
 });
 
-test('管理员修改首页文案后立即生效', async () => {
-  const res = await admin.put('/api/settings', { ...settings, heroTitle: '测试标题 <b>不转义</b>' });
+test('落地部修改首页文案后立即生效，其他部不受影响', async () => {
+  const res = await admin.put('/api/parts/landing', { ...settings.landing, heroTitle: '测试标题 <b>不转义</b>' });
   assert.equal(res.status, 200);
   const home = await guest.get('/');
   assert.match(home.data, /测试标题 &lt;b&gt;不转义&lt;\/b&gt;/, '文案应被安全转义');
-  settings = res.data.settings;
+  settings.landing = res.data.data;
+  const db = new DatabaseSync(path.join(DATA_DIR, 'site.db'));
+  const rows = Object.fromEntries(db.prepare('SELECT key, updated_by FROM settings').all().map((r) => [r.key, r.updated_by]));
+  db.close();
+  assert.ok(rows.landing, '落地部记录了修改人');
+  assert.equal(rows.design, null, '设计部没有被改动');
+  assert.equal((await admin.put('/api/parts/nope', {})).status, 404);
 });
 
-test('文案校验：空标题和非法链接会被拒绝', async () => {
-  assert.equal((await admin.put('/api/settings', { ...settings, heroTitle: '  ' })).status, 400);
-  const bad = await admin.put('/api/settings', { ...settings, contacts: [{ label: 'x', href: 'javascript:alert(1)' }] });
+test('各部只接受自己的字段：空标题和非法链接会被拒绝', async () => {
+  assert.equal((await admin.put('/api/parts/landing', { ...settings.landing, heroTitle: '  ' })).status, 400);
+  const bad = await admin.put('/api/parts/landing', { ...settings.landing, contacts: [{ label: 'x', href: 'javascript:alert(1)' }] });
   assert.equal(bad.status, 400);
   assert.match(bad.data.error, /https/);
+  assert.equal((await admin.put('/api/parts/design', { ...settings.design, name: '' })).status, 400);
 });
 
-test('不能删除仍有教程在用的分类', async () => {
-  const res = await admin.put('/api/settings', { ...settings, categories: settings.categories.filter((c) => c.key !== 'skills') });
+test('教程部不能删除仍有教程在用的分类', async () => {
+  const res = await admin.put('/api/parts/tutorials', {
+    ...settings.tutorials,
+    categories: settings.tutorials.categories.filter((c) => c.key !== 'skills'),
+  });
   assert.equal(res.status, 400);
   assert.match(res.data.error, /Git 入门/);
+});
+
+test('某个部的数据损坏时只有它退回默认值，网站照常运行', async () => {
+  const db = new DatabaseSync(path.join(DATA_DIR, 'site.db'));
+  db.prepare("UPDATE settings SET value = '{broken' WHERE key = 'design'").run();
+  const home = await guest.get('/');
+  assert.equal(home.status, 200);
+  assert.match(home.data, /新手上手站/, '设计部退回默认站名');
+  assert.match(home.data, /测试标题/, '落地部的修改仍然在');
+  db.prepare("UPDATE settings SET value = ? WHERE key = 'design'").run(JSON.stringify(settings.design));
+  db.close();
+});
+
+test('某篇教程数据损坏时只隐藏它自己，其他教程照常显示', async () => {
+  const db = new DatabaseSync(path.join(DATA_DIR, 'site.db'));
+  db.prepare("UPDATE tutorials SET tags = 'not json' WHERE slug = 'start-here'").run();
+  const home = await guest.get('/');
+  assert.equal(home.status, 200);
+  assert.doesNotMatch(home.data, /新手必读：开始之前/);
+  assert.match(home.data, /Git 入门/);
+  assert.equal((await guest.get('/tutorials/start-here/')).status, 404);
+  assert.equal((await guest.get('/tutorials/git-first-commit/')).status, 200);
+  db.prepare("UPDATE tutorials SET tags = '[\"必读\"]' WHERE slug = 'start-here'").run();
+  db.close();
+  assert.equal((await guest.get('/tutorials/start-here/')).status, 200);
 });
 
 test('管理员生成邀请链接，邀请页可以打开', async () => {
@@ -161,6 +198,8 @@ test('管理员生成邀请链接，邀请页可以打开', async () => {
   const account = await admin.get('/account');
   assert.match(account.data, new RegExp(`/join/${inviteCode}`));
   assert.match(account.data, /<svg/, '应显示二维码');
+  assert.match(account.data, /网站结构/);
+  for (const name of ['设计部', '落地部', '教程部', '成员部', '编辑部']) assert.match(account.data, new RegExp(name));
 });
 
 test('凭邀请注册成为普通成员', async () => {
@@ -197,8 +236,8 @@ test('邀请次数用完后失效，用户名不能重复', async () => {
 
 test('普通成员看不到编辑工具栏，也不能调用编辑接口', async () => {
   const home = await member.get('/');
-  assert.doesNotMatch(home.data, /site-settings/);
-  assert.equal((await member.put('/api/settings', settings)).status, 403);
+  assert.doesNotMatch(home.data, /site-parts/);
+  assert.equal((await member.put('/api/parts/landing', settings.landing)).status, 403);
   assert.equal((await member.post('/api/tutorials')).status, 403);
   assert.equal((await member.put('/api/tutorials/git-first-commit', {})).status, 403);
   assert.equal((await member.del('/api/tutorials/git-first-commit')).status, 403);

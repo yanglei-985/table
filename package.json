@@ -10,7 +10,7 @@
     "preview": "npm run start",
     "check": "astro check",
     "admin": "node --disable-warning=ExperimentalWarning scripts/admin.mjs",
-    "test": "node --disable-warning=ExperimentalWarning --test tests/api.test.mjs",
+    "test": "node --disable-warning=ExperimentalWarning --test tests/api.test.mjs tests/migration.test.mjs",
     "test:e2e": "node --disable-warning=ExperimentalWarning tests/e2e.mjs"
   },
   "dependencies": {

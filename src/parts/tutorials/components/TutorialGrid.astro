@@ -1,0 +1,127 @@
+---
+// 教程部 · 首页上的教程列表：分类筛选、搜索、每篇一张卡片；管理员可以新建教程
+import TutorialCard from './TutorialCard.astro';
+import { tutorialsConfig } from '../../index';
+import { listTutorials } from '../store';
+import { categoryName } from '../../../core/util';
+
+const config = tutorialsConfig();
+const isAdmin = Astro.locals.user?.role === 'admin';
+const tutorials = listTutorials({ includeDrafts: isAdmin });
+const usedCategories = config.categories.filter((c) => tutorials.some((t) => t.category === c.key));
+---
+
+<section class="section" id="tutorials" data-part="tutorials">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">TUTORIALS</span>
+      <h2 data-field="tutorialsTitle">{config.tutorialsTitle}</h2>
+      <p data-field="tutorialsDesc" data-placeholder="一句说明">{config.tutorialsDesc}</p>
+      {isAdmin && (
+        <p class="edit-only new-tutorial">
+          <button type="button" class="edit-btn" id="new-tutorial">＋ 新建教程</button>
+          <span>分类、联系方式等在底部工具栏「站点设置」里修改</span>
+        </p>
+      )}
+    </div>
+
+    <div class="toolbar">
+      <div class="tabs" role="tablist" aria-label="教程分类">
+        <button class="tab active" data-filter="all" role="tab" aria-selected="true">全部</button>
+        {usedCategories.map((c) => (
+          <button class="tab" data-filter={c.key} role="tab" aria-selected="false" title={c.desc}>{c.name}</button>
+        ))}
+      </div>
+      <label class="search">
+        <span aria-hidden="true">⌕</span>
+        <input id="search" type="search" placeholder="搜索教程，如：Git、安装" autocomplete="off" />
+      </label>
+    </div>
+
+    <div class="grid" id="grid">
+      {tutorials.map((t) => <TutorialCard tutorial={t} categoryName={categoryName(config.categories, t.category)} />)}
+    </div>
+    <p class="empty" id="empty" hidden={tutorials.length > 0}>
+      {tutorials.length > 0 ? '没有找到相关教程，换个关键词试试，或者告诉我你想看什么 👇' : '还没有教程。'}
+    </p>
+  </div>
+</section>
+
+<script>
+  import { api } from '../../../core/client/api';
+
+  // 分类筛选 + 搜索
+  const grid = document.getElementById('grid')!;
+  const empty = document.getElementById('empty')!;
+  const search = document.getElementById('search') as HTMLInputElement;
+  const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('.tab'));
+  const cards = Array.from(grid.querySelectorAll<HTMLElement>('.tcard'));
+  let filter = 'all';
+
+  function apply() {
+    if (cards.length === 0) return;
+    const q = search.value.trim().toLowerCase();
+    let shown = 0;
+    for (const card of cards) {
+      const visible =
+        (filter === 'all' || card.dataset.category === filter) &&
+        (!q || q.split(/\s+/).every((w) => card.dataset.keywords!.includes(w)));
+      card.hidden = !visible;
+      if (visible) shown++;
+    }
+    empty.hidden = shown > 0;
+  }
+
+  for (const tab of tabs) {
+    tab.addEventListener('click', () => {
+      filter = tab.dataset.filter!;
+      for (const t of tabs) {
+        t.classList.toggle('active', t === tab);
+        t.setAttribute('aria-selected', String(t === tab));
+      }
+      apply();
+    });
+  }
+  search.addEventListener('input', apply);
+
+  // 新建教程（管理员）：先建一篇草稿，再跳到它的页面继续编辑
+  document.getElementById('new-tutorial')?.addEventListener('click', async () => {
+    try {
+      const { slug } = await api('POST', '/api/tutorials');
+      location.href = `/tutorials/${slug}/`;
+    } catch (err) {
+      alert((err as Error).message);
+    }
+  });
+</script>
+
+<style>
+  .new-tutorial { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; margin-top: 16px; font-size: 13px; color: var(--text-3); }
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 30px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 5px; border-radius: 14px; border: 1px solid var(--line); background: color-mix(in srgb, var(--ink) 2%, transparent); }
+  .tab { padding: 7px 14px; border-radius: 10px; font-size: 14px; color: var(--text-2); cursor: pointer; transition: background 0.2s, color 0.2s; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--on-brand); background: var(--gradient); box-shadow: 0 6px 18px color-mix(in srgb, var(--brand) 35%, transparent); }
+  .search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    width: min(320px, 100%);
+    padding: 0 14px;
+    border-radius: 12px;
+    border: 1px solid var(--line-2);
+    background: var(--surface);
+    color: var(--text-3);
+    transition: border-color 0.2s;
+  }
+  .search:focus-within { border-color: var(--brand); }
+  .search input { flex: 1; min-width: 0; color: var(--text); }
+  .search input::placeholder { color: var(--text-3); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; padding-top: 10px; }
+  .grid :global([hidden]) { display: none; }
+  .empty { text-align: center; color: var(--text-3); padding: 40px 0; }
+  @media (max-width: 640px) {
+    .search { width: 100%; }
+  }
+</style>

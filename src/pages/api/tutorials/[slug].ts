@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { deleteTutorial, updateTutorial } from '../../../server/content';
-import { handle, json, readJson, requireUser } from '../../../server/api';
+import { deleteTutorial, updateTutorial } from '../../../parts/tutorials/store';
+import { handle, json, readJson, requireUser } from '../../../core/http';
 
 export const PUT: APIRoute = (context) =>
   handle(async () => {

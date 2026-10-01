@@ -58,7 +58,35 @@ npm run admin -- backup [文件路径]                 # 备份数据库，网�
 网站需要一直运行的 Node.js 服务和一块能保存数据库文件的磁盘。**GitHub Pages 只能放静态网页，不能运行这个网站。**
 国内访问推荐腾讯云 / 阿里云的轻量应用服务器（Ubuntu），也可以用 Zeabur、Railway 等支持持久化存储的平台。
 
-### 方式一：Docker（推荐）
+### 方式一：一键脚本（推荐，适合已有其他服务的 VPS）
+
+用 SSH 登录服务器后执行：
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/yanglei-985/table/refs/heads/claude/relaxed-rubin-encwsr/deploy/install.sh
+sudo bash install.sh
+```
+
+脚本会先只读地列出服务器上已有的服务和端口，然后**只新增自己的东西**：
+
+| 新增 | 位置 |
+| --- | --- |
+| 程序和独立的 Node.js | `/opt/tutorial-site`（不安装、不升级系统的 Node） |
+| 数据库 | `/var/lib/tutorial-site/site.db` |
+| 配置 | `/etc/tutorial-site.env`（端口、对外地址等） |
+| 服务 | systemd 服务 `tutorial-site`，以专用系统用户 `tutorial-site` 运行，只能写自己的数据目录 |
+| 管理命令 | `/usr/local/bin/tutorial-site` |
+
+- 自动选一个空闲端口（默认从 4321 开始找），不修改 Nginx / Docker 等已有服务的配置
+- 防火墙（ufw / firewalld）启用时只新增放行这个端口；云服务商的安全组需要自己在控制面板放行
+- 首次安装会生成管理员账号和随机密码，只显示一次
+- `tutorial-site update` 更新：先备份数据库，新版本启动成功才切换，失败自动回到旧版本
+- `tutorial-site uninstall` 卸载：只删除上面这些新增的东西（默认保留数据库，`--purge` 一起删除）
+
+以后绑定域名：把 `/etc/tutorial-site.env` 里的 `PUBLIC_URL` 改成 `https://你的域名`、`TRUST_PROXY=1`，
+在你自己的 Nginx 里新增一个反向代理到 `127.0.0.1:端口` 的站点（见下文），然后 `systemctl restart tutorial-site`。
+
+### 方式二：Docker
 
 ```bash
 git clone https://github.com/yanglei-985/table.git && cd table
@@ -80,7 +108,7 @@ docker exec tutorial-site node scripts/admin.mjs backup /data/backup.db
 
 更新版本：`git pull && docker build -t tutorial-site . && docker rm -f tutorial-site`，再执行上面的 `docker run`。
 
-### 方式二：直接用 Node.js
+### 方式三：直接用 Node.js
 
 ```bash
 npm ci && npm run build
@@ -159,20 +187,30 @@ GitHub Actions 会在每次推送时自动运行类型检查、构建和这两�
 - 默认主题：`src/site.config.ts` 的 `defaultTheme`；配色：`src/styles/global.css` 里对应的 `[data-theme='...']` 块。
 - 字体：`global.css` 的 `--font`。中文显示为宋体（Windows「宋体」、macOS / iPhone「宋体-简」），部分安卓手机没有宋体会显示为系统默认字体。
 
-## 目录结构
+## 目录结构：按「部」划分
+
+网站分成几个部，每个部只管自己的内容和配置（详见 [`src/parts/README.md`](src/parts/README.md)）：
+
+| 部 | 目录 | 负责 |
+| --- | --- | --- |
+| 设计部 | `src/parts/design/` | 页面骨架、三套主题、字体、站名 / 作者 / 页脚 |
+| 落地部 | `src/parts/landing/` | 首页大标题、介绍、卖点、学习路线、常见问题、联系方式 |
+| 教程部 | `src/parts/tutorials/` | 教程分类和列表；**每篇教程是独立单元**，有自己的内容、草稿状态和历史版本 |
+| 成员部 | `src/parts/accounts/` | 账号、登录、邀请、成员管理、账号中心 |
+| 编辑部 | `src/parts/editor/` | 管理员的编辑模式工具栏和「站点设置」，把修改交给对应的部保存 |
+
+- 每个部的配置在数据库里各占一行，保存一个部不会改动其他部；某个部的数据损坏只会让它自己退回默认值。
+- 新增、修改、删除教程只动那一篇的记录，不需要重新构建或重启网站；某一篇写坏了只影响它自己的页面。
+- 管理员在「账号中心 → 网站结构」可以看到各部最近谁改过，以及每篇教程单元的状态和历史版本数。
 
 ```text
 src/
-├── server/            # 服务端：db.mjs（SQLite 表结构）、auth.mjs（账号与登录）、
-│                      #         invites.mjs（邀请）、content.ts（文案与教程）、api.ts
-├── pages/             # 页面：首页、教程页、登录、邀请注册、账号中心
-│   └── api/           # 接口：登录注册、文案、教程、邀请、成员管理
-├── scripts/           # 浏览器端：编辑模式、接口调用
-├── components/        # 编辑工具栏、主题切换、教程卡片等
-├── middleware.ts      # 识别登录用户、拦截跨站请求
-├── site.config.ts     # 首次启动时写入数据库的默认文案、主题列表
-└── styles/global.css  # 主题变量与通用样式
-seed/tutorials/        # 首次启动时导入的示例教程
-scripts/admin.mjs      # 管理员命令行工具
-tests/                 # 接口测试与浏览器流程测试
+├── core/          # 公共底座：数据库与升级、「部」的定义与读写、历史版本、接口工具
+├── parts/         # 各个部（见上表），每个部有自己的 README
+├── pages/         # 路由：只负责把请求交给对应的部
+│   └── api/       # 接口：/api/parts/<部>、/api/tutorials、登录注册、邀请、成员
+└── middleware.ts  # 识别登录用户、拦截跨站请求
+scripts/admin.mjs  # 管理员命令行工具
+deploy/            # 服务器一键安装 / 更新 / 卸载脚本
+tests/             # 接口测试、数据库升级测试、浏览器流程测试
 ```

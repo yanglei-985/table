@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { SESSION_COOKIE, checkCredentials, createSession } from '../../../server/auth.mjs';
-import { checkRateLimit, clearFailures, clientIp, handle, HttpError, isHttps, json, readJson, recordFailure } from '../../../server/api';
+import { SESSION_COOKIE, checkCredentials, createSession } from '../../../parts/accounts/auth.mjs';
+import { checkRateLimit, clearFailures, clientIp, handle, HttpError, isHttps, json, readJson, recordFailure } from '../../../core/http';
 
 export const POST: APIRoute = (context) =>
   handle(async () => {

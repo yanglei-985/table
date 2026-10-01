@@ -1,0 +1,63 @@
+---
+// 落地部 · 学习路线
+import { landing } from '../../index';
+
+const page = landing();
+const isAdmin = Astro.locals.user?.role === 'admin';
+---
+
+{(page.roadmap.length > 0 || isAdmin) && (
+  <section class="section" id="roadmap" data-part="landing">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">ROADMAP</span>
+        <h2 data-field="roadmapTitle">{page.roadmapTitle}</h2>
+        <p data-field="roadmapDesc" data-placeholder="一句说明">{page.roadmapDesc}</p>
+      </div>
+      <ol class="roadmap" data-list="roadmap">
+        {page.roadmap.map((step) => (
+          <li class="card step" data-item>
+            <span class="step-no" aria-hidden="true"></span>
+            <h3 data-sub="title" data-placeholder="步骤标题">{step.title}</h3>
+            <p data-sub="desc" data-multiline data-placeholder="步骤说明">{step.desc}</p>
+            <button type="button" class="x edit-only" data-remove aria-label="删除这一步">×</button>
+          </li>
+        ))}
+        <li class="step-add edit-only"><button type="button" class="edit-btn" data-add-item="roadmap">＋ 添加一步</button></li>
+      </ol>
+      <template data-template="roadmap">
+        <li class="card step" data-item>
+          <span class="step-no" aria-hidden="true"></span>
+          <h3 data-sub="title" data-placeholder="步骤标题">新的一步</h3>
+          <p data-sub="desc" data-multiline data-placeholder="步骤说明">这一步要做什么。</p>
+          <button type="button" class="x edit-only" data-remove aria-label="删除这一步">×</button>
+        </li>
+      </template>
+    </div>
+  </section>
+)}
+
+<style>
+  .roadmap { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; counter-reset: step; }
+  .step { position: relative; padding: 26px 24px; counter-increment: step; }
+  .step-no {
+    display: inline-grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--brand-soft);
+    border: 1px solid color-mix(in srgb, var(--brand) 35%, transparent);
+    color: var(--brand-text);
+    font-weight: 700;
+    font-family: var(--mono);
+    margin-bottom: 16px;
+  }
+  .step-no::before { content: counter(step, decimal-leading-zero); }
+  .step h3 { font-size: 17px; margin-bottom: 6px; }
+  .step p { color: var(--text-2); font-size: 14px; }
+  .step-add { display: grid; place-items: center; border: 1px dashed var(--line-2); border-radius: var(--radius); min-height: 120px; }
+  @media (max-width: 860px) {
+    .roadmap { grid-template-columns: 1fr; }
+  }
+</style>

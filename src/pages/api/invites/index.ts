@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { createInvite } from '../../../server/invites.mjs';
-import { handle, HttpError, json, readJson, requireUser } from '../../../server/api';
+import { createInvite } from '../../../parts/accounts/invites.mjs';
+import { handle, HttpError, json, readJson, requireUser } from '../../../core/http';
 
 export const POST: APIRoute = (context) =>
   handle(async () => {

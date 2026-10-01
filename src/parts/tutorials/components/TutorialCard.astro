@@ -1,0 +1,77 @@
+---
+// 教程部 · 首页上一篇教程的卡片
+import { url } from '../../../core/util';
+import type { Tutorial } from '../store';
+import LevelChip from './LevelChip.astro';
+
+interface Props {
+  tutorial: Tutorial;
+  categoryName: string;
+}
+
+const { tutorial, categoryName } = Astro.props;
+const { slug, title, description, category, level, duration, featured, draft, tags } = tutorial;
+const keywords = [title, description, categoryName, level, ...tags].join(' ').toLowerCase();
+---
+
+<a
+  class:list={['tcard', 'card', { featured, draft }]}
+  href={url(`tutorials/${slug}/`)}
+  data-category={category}
+  data-keywords={keywords}
+>
+  {draft ? <span class="badge badge-draft">草稿 · 仅管理员可见</span> : featured && <span class="badge">新手推荐</span>}
+  <div class="tcard-top">
+    <span class="tcard-cat">{categoryName}</span>
+  </div>
+  <h3>{title}</h3>
+  <p>{description}</p>
+  <div class="tcard-meta">
+    <LevelChip level={level} />
+    <span class="chip">⏱ 约 {duration} 分钟</span>
+    {tags.slice(0, 2).map((t) => <span class="chip">#{t}</span>)}
+  </div>
+  <span class="tcard-go">开始学习 →</span>
+</a>
+
+<style>
+  .tcard {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 22px;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  }
+  .tcard:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--brand) 45%, transparent);
+    box-shadow: 0 16px 40px color-mix(in srgb, var(--shade) 45%, transparent), 0 0 0 1px color-mix(in srgb, var(--brand) 15%, transparent);
+  }
+  .tcard.featured {
+    border-color: color-mix(in srgb, var(--brand) 40%, transparent);
+    background:
+      radial-gradient(420px 160px at 100% 0%, color-mix(in srgb, var(--brand) 18%, transparent), transparent 70%),
+      linear-gradient(180deg, color-mix(in srgb, var(--ink) 4%, transparent), color-mix(in srgb, var(--ink) 1%, transparent));
+  }
+  .badge {
+    position: absolute;
+    top: -11px;
+    right: 18px;
+    padding: 3px 11px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--on-brand);
+    background: var(--gradient);
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--brand) 45%, transparent);
+  }
+  .tcard.draft { border-style: dashed; opacity: 0.85; }
+  .badge-draft { background: var(--surface-3); color: var(--text-2); box-shadow: none; }
+  .tcard-cat { font-size: 12px; color: var(--brand-2); letter-spacing: 0.06em; }
+  h3 { font-size: 18px; line-height: 1.4; }
+  p { color: var(--text-2); font-size: 14px; flex: 1; }
+  .tcard-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .tcard-go { margin-top: 6px; font-size: 13px; font-weight: 600; color: var(--brand-text); }
+  .tcard:hover .tcard-go { color: var(--text); }
+</style>

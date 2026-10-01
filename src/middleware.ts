@@ -1,5 +1,5 @@
 import { defineMiddleware } from 'astro:middleware';
-import { SESSION_COOKIE, bootstrapAdminFromEnv, getSessionUser, purgeExpiredSessions } from './server/auth.mjs';
+import { SESSION_COOKIE, bootstrapAdminFromEnv, getSessionUser, purgeExpiredSessions } from './parts/accounts/auth.mjs';
 
 let booted = false;
 

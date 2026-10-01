@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { renderMarkdown } from '../../server/content';
-import { handle, json, readJson, requireUser } from '../../server/api';
+import { renderMarkdown } from '../../parts/tutorials/render';
+import { handle, json, readJson, requireUser } from '../../core/http';
 
 // 编辑教程时的实时预览
 export const POST: APIRoute = (context) =>

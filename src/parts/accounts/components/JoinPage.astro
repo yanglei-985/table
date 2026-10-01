@@ -1,0 +1,67 @@
+---
+// 成员部 · 凭邀请链接注册
+import Layout from '../../design/Layout.astro';
+import AuthCard from './AuthCard.astro';
+import { getInvite, inviteStatus } from '../invites.mjs';
+import { design } from '../../index';
+
+interface Props {
+  code: string;
+}
+
+const site = design();
+const invite = getInvite(Astro.props.code);
+const status = invite ? inviteStatus(invite) : '无效';
+const user = Astro.locals.user;
+---
+
+<Layout title="加入">
+  {status === '有效' ? (
+    <AuthCard
+      title={`加入「${site.name}」`}
+      subtitle={`${invite!.creator_name ?? '管理员'} 邀请你注册账号，一起学习。`}
+    >
+      {user && <p class="hint">你已经以「{user.display_name}」登录。继续注册会切换到新账号。</p>}
+      <form id="join" data-code={invite!.code}>
+        <label class="field">用户名<input class="input" name="username" autocomplete="username" required pattern="[A-Za-z0-9_]{3,20}" maxlength="20" placeholder="3–20 位字母、数字或下划线" /></label>
+        <label class="field">昵称<input class="input" name="displayName" required maxlength="20" placeholder="大家看到的名字，可以用中文" /></label>
+        <label class="field">密码<input class="input" name="password" type="password" autocomplete="new-password" required minlength="8" placeholder="至少 8 位" /></label>
+        <label class="field">确认密码<input class="input" name="confirm" type="password" autocomplete="new-password" required minlength="8" /></label>
+        <p class="form-error" role="alert"></p>
+        <button class="btn btn-primary" type="submit">注册并登录</button>
+        <p class="hint">已有账号？<a href="/login">直接登录</a></p>
+      </form>
+    </AuthCard>
+  ) : (
+    <AuthCard title="邀请链接不可用" subtitle={`这个邀请链接${status === '无效' ? '不存在' : status}。请联系管理员重新获取。`}>
+      <a class="btn btn-ghost" href="/">去首页看看</a>
+    </AuthCard>
+  )}
+</Layout>
+
+<script>
+  import { api } from '../../../core/client/api';
+
+  const form = document.getElementById('join') as HTMLFormElement | null;
+  if (form) {
+    const error = form.querySelector('.form-error')!;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
+      if (data.password !== data.confirm) {
+        error.textContent = '两次输入的密码不一致';
+        return;
+      }
+      const button = form.querySelector('button')!;
+      button.disabled = true;
+      error.textContent = '';
+      try {
+        await api('POST', '/api/auth/register', { ...data, code: form.dataset.code });
+        location.href = '/account?welcome=1';
+      } catch (err) {
+        error.textContent = (err as Error).message;
+        button.disabled = false;
+      }
+    });
+  }
+</script>
