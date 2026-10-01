@@ -232,3 +232,70 @@ main { flex: 1; }
   html { scroll-behavior: auto; }
   * { transition: none !important; animation: none !important; }
 }
+
+/* ---------- 编辑模式（管理员） ---------- */
+html:not(.editing) .edit-only { display: none !important; }
+html.editing .view-only { display: none !important; }
+html.editing [contenteditable] {
+  outline: 1px dashed color-mix(in srgb, var(--brand) 55%, transparent);
+  outline-offset: 4px;
+  border-radius: 4px;
+  cursor: text;
+  caret-color: var(--brand);
+  min-width: 1em;
+}
+html.editing [contenteditable]:hover { outline-color: var(--brand); }
+html.editing [contenteditable]:focus {
+  outline: 2px solid var(--brand);
+  background-color: var(--brand-soft);
+}
+/* 渐变文字在编辑时改为纯色，光标和选区才看得清 */
+html.editing .gradient-text[contenteditable] {
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  color: var(--brand);
+}
+html.editing [contenteditable]:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-3);
+}
+html.editing body { padding-bottom: 80px; }
+
+.edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 9px;
+  font-size: 13px;
+  color: var(--brand-text);
+  border: 1px dashed color-mix(in srgb, var(--brand) 50%, transparent);
+  background: var(--brand-soft);
+  cursor: pointer;
+}
+.edit-btn:hover { border-style: solid; }
+.edit-btn.danger {
+  color: var(--danger-text);
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+}
+
+/* ---------- 表单通用 ---------- */
+.field { display: grid; gap: 6px; font-size: 14px; color: var(--text-2); }
+.input,
+select.input,
+textarea.input {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+textarea.input { height: auto; padding: 10px 12px; line-height: 1.6; resize: vertical; }
+.input:focus { outline: none; border-color: var(--brand); }
+.form-error { color: var(--danger-text); font-size: 14px; min-height: 1.4em; }

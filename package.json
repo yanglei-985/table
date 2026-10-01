@@ -6,16 +6,27 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview",
-    "check": "astro check"
+    "start": "node --disable-warning=ExperimentalWarning ./dist/server/entry.mjs",
+    "preview": "npm run start",
+    "check": "astro check",
+    "admin": "node --disable-warning=ExperimentalWarning scripts/admin.mjs",
+    "test": "node --disable-warning=ExperimentalWarning --test tests/api.test.mjs",
+    "test:e2e": "node --disable-warning=ExperimentalWarning tests/e2e.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.3.1",
-    "astro": "^7.3.5"
+    "@astrojs/node": "^11.1.6",
+    "astro": "^7.3.5",
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
     "@types/node": "^26.6.3",
+    "@types/qrcode": "^1.5.6",
+    "playwright": "^1.56.1",
     "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=22.13"
   }
 }

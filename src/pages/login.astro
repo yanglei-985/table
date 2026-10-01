@@ -1,0 +1,40 @@
+---
+import Base from '../layouts/Base.astro';
+import AuthCard from '../components/AuthCard.astro';
+
+const raw = Astro.url.searchParams.get('next') ?? '/';
+// 只允许跳回本站页面（反斜杠在部分浏览器里等同于斜杠，也要排除）
+const next = raw.startsWith('/') && !raw.startsWith('//') && !raw.includes('\\') ? raw : '/';
+if (Astro.locals.user) return Astro.redirect(next);
+---
+
+<Base title="登录">
+  <AuthCard title="登录" subtitle="还没有账号？向管理员要一个邀请链接。">
+    <form id="login" data-next={next}>
+      <label class="field">用户名<input class="input" name="username" autocomplete="username" required autofocus /></label>
+      <label class="field">密码<input class="input" name="password" type="password" autocomplete="current-password" required /></label>
+      <p class="form-error" role="alert"></p>
+      <button class="btn btn-primary" type="submit">登录</button>
+    </form>
+  </AuthCard>
+</Base>
+
+<script>
+  import { api } from '../scripts/api';
+
+  const form = document.getElementById('login') as HTMLFormElement;
+  const error = form.querySelector('.form-error')!;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const button = form.querySelector('button')!;
+    button.disabled = true;
+    error.textContent = '';
+    try {
+      await api('POST', '/api/auth/login', Object.fromEntries(new FormData(form)));
+      location.href = form.dataset.next!;
+    } catch (err) {
+      error.textContent = (err as Error).message;
+      button.disabled = false;
+    }
+  });
+</script>

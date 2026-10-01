@@ -1,30 +1,25 @@
-import { getCollection, type CollectionEntry } from 'astro:content';
-import { categories } from './site.config';
+import type { Settings } from './site.config';
 
-export type Tutorial = CollectionEntry<'tutorials'>;
-
-/** 拼接带 base 的站内链接，兼容部署在子路径（如 GitHub Pages /repo/）。 */
+/** 站内链接 */
 export function url(path = '') {
-  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-  return `${base}/${path.replace(/^\//, '')}`;
+  return `/${path.replace(/^\//, '')}`;
 }
 
-/** 按「分类顺序 → order → 标题」排好序的已发布教程。 */
-export async function getTutorials() {
-  const rank = new Map<string, number>(categories.map((c, i) => [c.key, i]));
-  const list = await getCollection('tutorials', ({ data }) => !data.draft);
-  return list.sort(
-    (a, b) =>
-      (rank.get(a.data.category) ?? 99) - (rank.get(b.data.category) ?? 99) ||
-      a.data.order - b.data.order ||
-      a.data.title.localeCompare(b.data.title, 'zh'),
-  );
+export function categoryName(settings: Settings, key: string) {
+  return settings.categories.find((c) => c.key === key)?.name ?? key;
 }
 
-export function categoryName(key: string) {
-  return categories.find((c) => c.key === key)?.name ?? key;
+export function formatDate(iso: string | null | undefined) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'Asia/Shanghai',
+  });
 }
 
-export function formatDate(date: Date) {
-  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+/** 安全地把数据嵌进 <script type="application/json">，防止内容里的 </script> 截断标签 */
+export function safeJson(data: unknown) {
+  return JSON.stringify(data).replace(/</g, '\\u003c');
 }

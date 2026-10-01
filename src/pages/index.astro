@@ -1,42 +1,49 @@
 ---
 import Base from '../layouts/Base.astro';
 import TutorialCard from '../components/TutorialCard.astro';
-import { site, categories, roadmap, faq } from '../site.config';
-import { getTutorials, url } from '../lib';
+import { getSettings, listTutorials } from '../server/content';
+import { categoryName, url } from '../lib';
 
-const tutorials = await getTutorials();
-const usedCategories = categories.filter((c) => tutorials.some((t) => t.data.category === c.key));
-const totalMinutes = tutorials.reduce((sum, t) => sum + t.data.duration, 0);
-const firstTutorial = tutorials.find((t) => t.data.featured) ?? tutorials[0];
+const site = getSettings();
+const isAdmin = Astro.locals.user?.role === 'admin';
+const tutorials = listTutorials({ includeDrafts: isAdmin });
+const published = tutorials.filter((t) => !t.draft);
+const usedCategories = site.categories.filter((c) => tutorials.some((t) => t.category === c.key));
+const totalMinutes = published.reduce((sum, t) => sum + t.duration, 0);
+const firstTutorial = published.find((t) => t.featured) ?? published[0];
 
 const stats = [
-  { value: tutorials.length, label: '篇教程' },
-  { value: usedCategories.length, label: '个分类' },
+  { value: published.length, label: '篇教程' },
+  { value: new Set(published.map((t) => t.category)).size, label: '个分类' },
   { value: totalMinutes, label: '分钟学完全部' },
 ];
 ---
 
-<Base>
+<Base editable>
   <!-- ========== Hero ========== -->
   <section class="hero">
     <div class="container hero-inner">
-      <span class="chip chip-brand hero-chip">✦ 专为新朋友准备的上手教程</span>
+      <span class="chip chip-brand hero-chip" data-field="heroBadge" data-placeholder="顶部小标签">{site.heroBadge}</span>
       <h1>
-        {site.heroTitle}<br />
-        <span class="gradient-text">{site.heroHighlight}</span>
+        <span data-field="heroTitle" data-placeholder="大标题第一行">{site.heroTitle}</span><br />
+        <span class="gradient-text" data-field="heroHighlight" data-placeholder="渐变高亮的第二行">{site.heroHighlight}</span>
       </h1>
-      <p class="hero-desc">{site.description}</p>
+      <p class="hero-desc" data-field="description" data-multiline data-placeholder="一段介绍">{site.description}</p>
       <div class="hero-actions">
         {firstTutorial && (
-          <a class="btn btn-primary" href={url(`tutorials/${firstTutorial.id}/`)}>从第一篇开始 →</a>
+          <a class="btn btn-primary" href={url(`tutorials/${firstTutorial.slug}/`)}>从第一篇开始 →</a>
         )}
         <a class="btn btn-ghost" href="#tutorials">浏览全部教程</a>
       </div>
-      <ul class="hero-points">
-        <li>✓ 步骤清晰，可直接复制</li>
-        <li>✓ 每步都有检查点</li>
-        <li>✓ 持续更新</li>
+      <ul class="hero-points" data-list="heroPoints">
+        {site.heroPoints.map((p) => (
+          <li data-item>✓ <span data-sub="." data-placeholder="卖点">{p}</span><button type="button" class="x edit-only" data-remove aria-label="删除">×</button></li>
+        ))}
+        <li class="edit-only"><button type="button" class="edit-btn" data-add-item="heroPoints">＋ 卖点</button></li>
       </ul>
+      <template data-template="heroPoints">
+        <li data-item>✓ <span data-sub="." data-placeholder="卖点">新卖点</span><button type="button" class="x edit-only" data-remove aria-label="删除">×</button></li>
+      </template>
       <div class="stats card">
         {stats.map((s) => (
           <div class="stat">
@@ -49,32 +56,48 @@ const stats = [
   </section>
 
   <!-- ========== 学习路线 ========== -->
-  <section class="section" id="roadmap">
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">ROADMAP</span>
-        <h2>三步上手，不迷路</h2>
-        <p>不知道从哪开始？按这个顺序走就对了。</p>
-      </div>
-      <ol class="roadmap">
-        {roadmap.map((step, i) => (
-          <li class="card step">
-            <span class="step-no">{String(i + 1).padStart(2, '0')}</span>
-            <h3>{step.title}</h3>
-            <p>{step.desc}</p>
+  {(site.roadmap.length > 0 || isAdmin) && (
+    <section class="section" id="roadmap">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow">ROADMAP</span>
+          <h2 data-field="roadmapTitle">{site.roadmapTitle}</h2>
+          <p data-field="roadmapDesc" data-placeholder="一句说明">{site.roadmapDesc}</p>
+        </div>
+        <ol class="roadmap" data-list="roadmap">
+          {site.roadmap.map((step) => (
+            <li class="card step" data-item>
+              <span class="step-no" aria-hidden="true"></span>
+              <h3 data-sub="title" data-placeholder="步骤标题">{step.title}</h3>
+              <p data-sub="desc" data-multiline data-placeholder="步骤说明">{step.desc}</p>
+              <button type="button" class="x edit-only" data-remove aria-label="删除这一步">×</button>
+            </li>
+          ))}
+          <li class="step-add edit-only"><button type="button" class="edit-btn" data-add-item="roadmap">＋ 添加一步</button></li>
+        </ol>
+        <template data-template="roadmap">
+          <li class="card step" data-item>
+            <span class="step-no" aria-hidden="true"></span>
+            <h3 data-sub="title" data-placeholder="步骤标题">新的一步</h3>
+            <p data-sub="desc" data-multiline data-placeholder="步骤说明">这一步要做什么。</p>
+            <button type="button" class="x edit-only" data-remove aria-label="删除这一步">×</button>
           </li>
-        ))}
-      </ol>
-    </div>
-  </section>
+        </template>
+      </div>
+    </section>
+  )}
 
   <!-- ========== 教程列表 ========== -->
   <section class="section" id="tutorials">
     <div class="container">
       <div class="section-head">
         <span class="eyebrow">TUTORIALS</span>
-        <h2>全部教程</h2>
-        <p>按分类筛选，或直接搜索你想学的内容。</p>
+        <h2 data-field="tutorialsTitle">{site.tutorialsTitle}</h2>
+        <p data-field="tutorialsDesc" data-placeholder="一句说明">{site.tutorialsDesc}</p>
+        <p class="edit-only new-tutorial">
+          <button type="button" class="edit-btn" id="new-tutorial">＋ 新建教程</button>
+          <span>分类、联系方式等在底部工具栏「站点设置」里修改</span>
+        </p>
       </div>
 
       <div class="toolbar">
@@ -93,37 +116,58 @@ const stats = [
       </div>
 
       <div class="grid" id="grid">
-        {tutorials.map((t) => <TutorialCard tutorial={t} />)}
+        {tutorials.map((t) => <TutorialCard tutorial={t} categoryName={categoryName(site, t.category)} />)}
       </div>
-      <p class="empty" id="empty" hidden>没有找到相关教程，换个关键词试试，或者告诉我你想看什么 👇</p>
+      <p class="empty" id="empty" hidden={tutorials.length > 0}>
+        {tutorials.length > 0 ? '没有找到相关教程，换个关键词试试，或者告诉我你想看什么 👇' : '还没有教程。'}
+      </p>
     </div>
   </section>
 
   <!-- ========== 常见问题 ========== -->
-  <section class="section" id="faq">
-    <div class="container narrow">
-      <div class="section-head">
-        <span class="eyebrow">FAQ</span>
-        <h2>常见问题</h2>
+  {(site.faq.length > 0 || isAdmin) && (
+    <section class="section" id="faq">
+      <div class="container narrow">
+        <div class="section-head">
+          <span class="eyebrow">FAQ</span>
+          <h2>常见问题</h2>
+        </div>
+        <div class="faq view-only">
+          {site.faq.map((item, i) => (
+            <details class="card" open={i === 0}>
+              <summary>{item.q}</summary>
+              <p>{item.a}</p>
+            </details>
+          ))}
+        </div>
+        <div class="faq edit-only" data-list="faq">
+          {site.faq.map((item) => (
+            <div class="card faq-edit" data-item>
+              <p class="faq-q" data-sub="q" data-placeholder="问题">{item.q}</p>
+              <p class="faq-a" data-sub="a" data-multiline data-placeholder="回答">{item.a}</p>
+              <button type="button" class="x" data-remove aria-label="删除这个问题">×</button>
+            </div>
+          ))}
+          <p><button type="button" class="edit-btn" data-add-item="faq">＋ 添加问题</button></p>
+        </div>
+        <template data-template="faq">
+          <div class="card faq-edit" data-item>
+            <p class="faq-q" data-sub="q" data-placeholder="问题">新问题？</p>
+            <p class="faq-a" data-sub="a" data-multiline data-placeholder="回答">回答内容。</p>
+            <button type="button" class="x" data-remove aria-label="删除这个问题">×</button>
+          </div>
+        </template>
       </div>
-      <div class="faq">
-        {faq.map((item, i) => (
-          <details class="card" open={i === 0}>
-            <summary>{item.q}</summary>
-            <p>{item.a}</p>
-          </details>
-        ))}
-      </div>
-    </div>
-  </section>
+    </section>
+  )}
 
   <!-- ========== 联系 ========== -->
   <section class="section" id="contact">
     <div class="container">
       <div class="cta card">
         <div>
-          <h2>卡住了？直接来问我</h2>
-          <p>带上截图和你已经试过的步骤，我能更快帮你定位问题。</p>
+          <h2 data-field="contactTitle">{site.contactTitle}</h2>
+          <p data-field="contactDesc" data-multiline data-placeholder="一句说明">{site.contactDesc}</p>
         </div>
         <div class="cta-links">
           {site.contacts.map((c) => (
@@ -136,6 +180,7 @@ const stats = [
 </Base>
 
 <script>
+  // ---------------- 分类筛选 + 搜索 ----------------
   const grid = document.getElementById('grid')!;
   const empty = document.getElementById('empty')!;
   const search = document.getElementById('search') as HTMLInputElement;
@@ -144,6 +189,7 @@ const stats = [
   let filter = 'all';
 
   function apply() {
+    if (cards.length === 0) return;
     const q = search.value.trim().toLowerCase();
     let shown = 0;
     for (const card of cards) {
@@ -167,6 +213,60 @@ const stats = [
     });
   }
   search.addEventListener('input', apply);
+</script>
+
+<script>
+  // ---------------- 编辑模式（仅管理员页面会加载工具栏） ----------------
+  import { api, markDirty, registerPage, setEditing, siteSettings, textOf, touchSettings } from '../scripts/edit-mode';
+
+  if (document.getElementById('site-settings')) {
+    registerPage({
+      collect() {
+        const s = siteSettings();
+        for (const el of document.querySelectorAll<HTMLElement>('[data-field]')) s[el.dataset.field!] = textOf(el);
+        for (const list of document.querySelectorAll<HTMLElement>('[data-list]')) {
+          s[list.dataset.list!] = Array.from(list.querySelectorAll<HTMLElement>('[data-item]'), (item) => {
+            const subs = Array.from(item.querySelectorAll<HTMLElement>('[data-sub]'));
+            if (subs.length === 1 && subs[0].dataset.sub === '.') return textOf(subs[0]);
+            return Object.fromEntries(subs.map((el) => [el.dataset.sub, textOf(el)]));
+          });
+        }
+        touchSettings();
+      },
+    });
+
+    document.addEventListener('click', async (e) => {
+      const t = e.target as HTMLElement;
+      const remove = t.closest('[data-remove]');
+      if (remove) {
+        remove.closest('[data-item]')!.remove();
+        markDirty();
+        return;
+      }
+      const key = t.closest<HTMLElement>('[data-add-item]')?.dataset.addItem;
+      if (key) {
+        const template = document.querySelector<HTMLTemplateElement>(`template[data-template="${key}"]`)!;
+        const list = document.querySelector<HTMLElement>(`[data-list="${key}"]`)!;
+        // 新条目插在「添加」按钮所在的那一行前面
+        let addRow = list.querySelector(`[data-add-item="${key}"]`)!;
+        while (addRow.parentElement !== list) addRow = addRow.parentElement!;
+        const item = template.content.firstElementChild!.cloneNode(true) as HTMLElement;
+        list.insertBefore(item, addRow);
+        setEditing(true);
+        item.querySelector<HTMLElement>('[data-sub]')?.focus();
+        markDirty();
+        return;
+      }
+      if (t.closest('#new-tutorial')) {
+        try {
+          const { slug } = await api('POST', '/api/tutorials');
+          location.href = `/tutorials/${slug}/`;
+        } catch (err) {
+          alert((err as Error).message);
+        }
+      }
+    });
+  }
 </script>
 
 <style>
@@ -203,6 +303,27 @@ const stats = [
   /* 学习路线 */
   .roadmap { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
   .step { padding: 26px 24px; }
+  .roadmap { counter-reset: step; }
+  .step { position: relative; counter-increment: step; }
+  .step-no::before { content: counter(step, decimal-leading-zero); }
+  .step-add { display: grid; place-items: center; border: 1px dashed var(--line-2); border-radius: var(--radius); min-height: 120px; }
+  .x {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    font-size: 18px;
+    color: var(--text-3);
+    cursor: pointer;
+  }
+  .x:hover { color: var(--danger-text); background: color-mix(in srgb, var(--danger) 10%, transparent); }
+  .hero-points .x { position: static; width: 22px; height: 22px; font-size: 15px; margin-left: 2px; }
+  .new-tutorial { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; margin-top: 16px; font-size: 13px; color: var(--text-3); }
+  .faq-edit { position: relative; padding: 18px 48px 18px 22px; }
+  .faq-q { font-weight: 600; }
+  .faq-a { color: var(--text-2); margin-top: 10px; white-space: pre-wrap; }
   .step-no {
     display: inline-grid;
     place-items: center;
